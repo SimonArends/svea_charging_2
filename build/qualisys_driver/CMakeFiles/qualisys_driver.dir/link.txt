@@ -1,0 +1,2 @@
+/usr/bin/ar qc libqualisys_driver.a CMakeFiles/qualisys_driver.dir/src/qualisys_driver.cpp.o
+/usr/bin/ranlib libqualisys_driver.a

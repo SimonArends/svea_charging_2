@@ -1,0 +1,668 @@
+[0.000000] (-) TimerEvent: {}
+[0.000585] (-) JobUnselected: {'identifier': 'el2425'}
+[0.000737] (-) JobUnselected: {'identifier': 'mocap_base'}
+[0.000904] (-) JobUnselected: {'identifier': 'mocap_qualisys'}
+[0.001243] (-) JobUnselected: {'identifier': 'robot_localization'}
+[0.001338] (-) JobUnselected: {'identifier': 'svea_charging'}
+[0.001398] (-) JobUnselected: {'identifier': 'svea_core'}
+[0.001446] (-) JobUnselected: {'identifier': 'svea_examples'}
+[0.001794] (-) JobUnselected: {'identifier': 'svea_localization'}
+[0.001874] (-) JobUnselected: {'identifier': 'svea_mocap'}
+[0.002030] (-) JobUnselected: {'identifier': 'usb_cam'}
+[0.002093] (qualisys_driver) JobQueued: {'identifier': 'qualisys_driver', 'dependencies': OrderedDict()}
+[0.002169] (qualisys_driver) JobStarted: {'identifier': 'qualisys_driver'}
+[0.022827] (qualisys_driver) JobProgress: {'identifier': 'qualisys_driver', 'progress': 'cmake'}
+[0.023029] (qualisys_driver) Command: {'cmd': ['/usr/bin/cmake', '/home/user/Projects/svea_charging/src/mocap4ros2_qualisys/qualisys_driver', '-DAMENT_CMAKE_SYMLINK_INSTALL=1', '-DCMAKE_INSTALL_PREFIX=/home/user/Projects/svea_charging/install/qualisys_driver'], 'cwd': '/home/user/Projects/svea_charging/build/qualisys_driver', 'env': OrderedDict([('LESSOPEN', '| /usr/bin/lesspipe %s'), ('VSCODE_CWD', '/home/user'), ('VSCODE_ESM_ENTRYPOINT', 'vs/workbench/api/node/extensionHostProcess'), ('CODEX_CI', '1'), ('USER', 'user'), ('SSH_CLIENT', '10.0.0.38 54360 22'), ('LC_TIME', 'sv_SE.UTF-8'), ('CODEX_INTERNAL_ORIGINATOR_OVERRIDE', 'codex_vscode'), ('VSCODE_NLS_CONFIG', '{"userLocale":"en","osLocale":"en","resolvedLanguage":"en","defaultMessagesFile":"/home/user/.vscode-server/cli/servers/Stable-7d842fb85a0275a4a8e4d7e040d2625abbf7f084/server/out/nls.messages.json","locale":"en","availableLanguages":{}}'), ('VSCODE_HANDLES_UNCAUGHT_ERRORS', 'true'), ('XDG_SESSION_TYPE', 'tty'), ('DEBUG', 'release'), ('SHLVL', '1'), ('LD_LIBRARY_PATH', '/usr/local/cuda/lib64:/opt/ros/humble/opt/rviz_ogre_vendor/lib:/opt/ros/humble/lib/aarch64-linux-gnu:/opt/ros/humble/lib'), ('BROWSER', '/home/user/.vscode-server/cli/servers/Stable-7d842fb85a0275a4a8e4d7e040d2625abbf7f084/server/bin/helpers/browser.sh'), ('MOTD_SHOWN', 'pam'), ('HOME', '/home/user'), ('OLDPWD', '/home/user/.vscode-server'), ('VSCODE_IPC_HOOK_CLI', '/run/user/1000/vscode-ipc-5c568adb-495e-404c-9c52-a08fa10fce36.sock'), ('ROS_PYTHON_VERSION', '3'), ('PAGER', 'cat'), ('LC_MONETARY', 'sv_SE.UTF-8'), ('LC_CTYPE', 'C.UTF-8'), ('SSL_CERT_FILE', '/usr/lib/ssl/certs/ca-certificates.crt'), ('NO_COLOR', '1'), ('DBUS_SESSION_BUS_ADDRESS', 'unix:path=/run/user/1000/bus'), ('COLORTERM', ''), ('VSCODE_L10N_BUNDLE_LOCATION', ''), ('APPLICATION_INSIGHTS_NO_STATSBEAT', 'true'), ('ROS_DISTRO', 'humble'), ('LOGNAME', 'user'), ('VSCODE_HANDLES_SIGPIPE', 'true'), ('_', '/usr/bin/colcon'), ('ROS_VERSION', '2'), ('XDG_SESSION_CLASS', 'user'), ('RUST_LOG', 'warn'), ('TERM', 'dumb'), ('XDG_SESSION_ID', '5'), ('VSCODE_CLI_REQUIRE_TOKEN', '2c116258-af0b-4f68-a1e9-9ef63b8863cf'), ('ROS_LOCALHOST_ONLY', '0'), ('PATH', '/home/user/.local/bin:/home/user/.codex/tmp/arg0/codex-arg06v5S29:/home/user/.vscode-server/cli/servers/Stable-7d842fb85a0275a4a8e4d7e040d2625abbf7f084/server/bin/remote-cli:/home/user/.local/bin:/usr/local/cuda/bin:/opt/ros/humble/bin:/home/user/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/home/user/.vscode-server/extensions/openai.chatgpt-26.519.32039-linux-arm64/bin/linux-aarch64'), ('VSCODE_AGENT_FOLDER', '/home/user/.vscode-server'), ('LC_ADDRESS', 'sv_SE.UTF-8'), ('XDG_RUNTIME_DIR', '/run/user/1000'), ('SSL_CERT_DIR', '/usr/lib/ssl/certs'), ('CODEX_SANDBOX_NETWORK_DISABLED', '1'), ('LANG', 'C.UTF-8'), ('LC_TELEPHONE', 'sv_SE.UTF-8'), ('GH_PAGER', 'cat'), ('LS_COLORS', ''), ('AMENT_PREFIX_PATH', '/opt/ros/humble'), ('SHELL', '/bin/bash'), ('LC_NAME', 'sv_SE.UTF-8'), ('ELECTRON_RUN_AS_NODE', '1'), ('LESSCLOSE', '/usr/bin/lesspipe %s %s'), ('CODEX_THREAD_ID', '019e6df1-c827-7160-993d-e6787eb44b8a'), ('LC_MEASUREMENT', 'sv_SE.UTF-8'), ('LC_IDENTIFICATION', 'sv_SE.UTF-8'), ('GIT_PAGER', 'cat'), ('PWD', '/home/user/Projects/svea_charging/build/qualisys_driver'), ('LC_ALL', 'C.UTF-8'), ('SSH_CONNECTION', '10.0.0.38 54360 10.0.8.44 22'), ('XDG_DATA_DIRS', '/usr/share/gnome:/usr/local/share:/usr/share:/var/lib/snapd/desktop'), ('PYTHONPATH', '/opt/ros/humble/lib/python3.10/site-packages:/opt/ros/humble/local/lib/python3.10/dist-packages'), ('LC_NUMERIC', 'sv_SE.UTF-8'), ('LC_PAPER', 'sv_SE.UTF-8'), ('COLCON', '1'), ('CMAKE_PREFIX_PATH', '/opt/ros/humble')]), 'shell': False}
+[0.051525] (qualisys_driver) StdoutLine: {'line': b'-- Found ament_cmake: 1.3.12 (/opt/ros/humble/share/ament_cmake/cmake)\n'}
+[0.096637] (-) TimerEvent: {}
+[0.197073] (-) TimerEvent: {}
+[0.297476] (-) TimerEvent: {}
+[0.353006] (qualisys_driver) StdoutLine: {'line': b'-- Override CMake install command with custom implementation using symlinks instead of copying resources\n'}
+[0.367648] (qualisys_driver) StdoutLine: {'line': b'-- Found rclcpp: 16.0.14 (/opt/ros/humble/share/rclcpp/cmake)\n'}
+[0.397680] (-) TimerEvent: {}
+[0.432298] (qualisys_driver) StdoutLine: {'line': b'-- Found rosidl_generator_c: 3.1.7 (/opt/ros/humble/share/rosidl_generator_c/cmake)\n'}
+[0.439284] (qualisys_driver) StdoutLine: {'line': b'-- Found rosidl_adapter: 3.1.7 (/opt/ros/humble/share/rosidl_adapter/cmake)\n'}
+[0.453584] (qualisys_driver) StdoutLine: {'line': b'-- Found rosidl_generator_cpp: 3.1.7 (/opt/ros/humble/share/rosidl_generator_cpp/cmake)\n'}
+[0.474336] (qualisys_driver) StdoutLine: {'line': b'-- Using all available rosidl_typesupport_c: rosidl_typesupport_fastrtps_c;rosidl_typesupport_introspection_c\n'}
+[0.497867] (-) TimerEvent: {}
+[0.501228] (qualisys_driver) StdoutLine: {'line': b'-- Using all available rosidl_typesupport_cpp: rosidl_typesupport_fastrtps_cpp;rosidl_typesupport_introspection_cpp\n'}
+[0.571340] (qualisys_driver) StdoutLine: {'line': b'-- Found rmw_implementation_cmake: 6.1.2 (/opt/ros/humble/share/rmw_implementation_cmake/cmake)\n'}
+[0.574463] (qualisys_driver) StdoutLine: {'line': b'-- Found rmw_fastrtps_cpp: 6.2.8 (/opt/ros/humble/share/rmw_fastrtps_cpp/cmake)\n'}
+[0.598049] (-) TimerEvent: {}
+[0.698537] (-) TimerEvent: {}
+[0.789512] (qualisys_driver) StdoutLine: {'line': b"-- Using RMW implementation 'rmw_fastrtps_cpp' as default\n"}
+[0.798712] (-) TimerEvent: {}
+[0.899159] (-) TimerEvent: {}
+[0.918372] (qualisys_driver) StdoutLine: {'line': b'-- Found rclcpp_lifecycle: 16.0.14 (/opt/ros/humble/share/rclcpp_lifecycle/cmake)\n'}
+[0.952584] (qualisys_driver) StdoutLine: {'line': b'-- Found tf2: 0.25.16 (/opt/ros/humble/share/tf2/cmake)\n'}
+[0.988980] (qualisys_driver) StdoutLine: {'line': b'-- Found tf2_ros: 0.25.16 (/opt/ros/humble/share/tf2_ros/cmake)\n'}
+[0.999359] (-) TimerEvent: {}
+[1.099786] (-) TimerEvent: {}
+[1.156258] (qualisys_driver) StdoutLine: {'line': b'-- Found mocap4r2_msgs: 0.0.6 (/opt/ros/humble/share/mocap4r2_msgs/cmake)\n'}
+[1.199192] (qualisys_driver) StdoutLine: {'line': b'-- qualisys_driver: `qualisys_cpp_sdk` targets not found. Attempting to fetch contents...\n'}
+[1.204291] (-) TimerEvent: {}
+[1.304636] (-) TimerEvent: {}
+[1.405118] (-) TimerEvent: {}
+[1.505564] (-) TimerEvent: {}
+[1.606011] (-) TimerEvent: {}
+[1.706496] (-) TimerEvent: {}
+[1.806989] (-) TimerEvent: {}
+[1.907593] (-) TimerEvent: {}
+[2.008120] (-) TimerEvent: {}
+[2.108589] (-) TimerEvent: {}
+[2.209453] (-) TimerEvent: {}
+[2.309936] (-) TimerEvent: {}
+[2.410371] (-) TimerEvent: {}
+[2.510905] (-) TimerEvent: {}
+[2.611647] (-) TimerEvent: {}
+[2.713661] (-) TimerEvent: {}
+[2.814078] (-) TimerEvent: {}
+[2.914669] (-) TimerEvent: {}
+[3.017002] (-) TimerEvent: {}
+[3.118395] (-) TimerEvent: {}
+[3.218903] (-) TimerEvent: {}
+[3.319835] (-) TimerEvent: {}
+[3.423379] (-) TimerEvent: {}
+[3.525194] (-) TimerEvent: {}
+[3.626054] (-) TimerEvent: {}
+[3.726461] (-) TimerEvent: {}
+[3.826902] (-) TimerEvent: {}
+[3.927457] (-) TimerEvent: {}
+[4.028565] (-) TimerEvent: {}
+[4.129126] (-) TimerEvent: {}
+[4.231799] (-) TimerEvent: {}
+[4.332241] (-) TimerEvent: {}
+[4.432663] (-) TimerEvent: {}
+[4.533285] (-) TimerEvent: {}
+[4.633722] (-) TimerEvent: {}
+[4.734467] (-) TimerEvent: {}
+[4.835309] (-) TimerEvent: {}
+[4.935739] (-) TimerEvent: {}
+[5.036146] (-) TimerEvent: {}
+[5.136555] (-) TimerEvent: {}
+[5.236986] (-) TimerEvent: {}
+[5.337421] (-) TimerEvent: {}
+[5.437832] (-) TimerEvent: {}
+[5.538238] (-) TimerEvent: {}
+[5.638649] (-) TimerEvent: {}
+[5.739051] (-) TimerEvent: {}
+[5.839466] (-) TimerEvent: {}
+[5.939942] (-) TimerEvent: {}
+[6.040340] (-) TimerEvent: {}
+[6.140749] (-) TimerEvent: {}
+[6.241167] (-) TimerEvent: {}
+[6.341704] (-) TimerEvent: {}
+[6.442136] (-) TimerEvent: {}
+[6.542746] (-) TimerEvent: {}
+[6.643158] (-) TimerEvent: {}
+[6.743573] (-) TimerEvent: {}
+[6.844185] (-) TimerEvent: {}
+[6.944810] (-) TimerEvent: {}
+[7.045675] (-) TimerEvent: {}
+[7.146094] (-) TimerEvent: {}
+[7.246508] (-) TimerEvent: {}
+[7.349158] (-) TimerEvent: {}
+[7.451178] (-) TimerEvent: {}
+[7.551808] (-) TimerEvent: {}
+[7.652256] (-) TimerEvent: {}
+[7.752669] (-) TimerEvent: {}
+[7.855573] (-) TimerEvent: {}
+[7.956016] (-) TimerEvent: {}
+[8.056432] (-) TimerEvent: {}
+[8.156852] (-) TimerEvent: {}
+[8.257274] (-) TimerEvent: {}
+[8.357715] (-) TimerEvent: {}
+[8.458150] (-) TimerEvent: {}
+[8.558830] (-) TimerEvent: {}
+[8.659250] (-) TimerEvent: {}
+[8.763826] (-) TimerEvent: {}
+[8.864492] (-) TimerEvent: {}
+[8.966504] (-) TimerEvent: {}
+[9.066926] (-) TimerEvent: {}
+[9.167764] (-) TimerEvent: {}
+[9.271796] (-) TimerEvent: {}
+[9.372367] (-) TimerEvent: {}
+[9.474367] (-) TimerEvent: {}
+[9.574784] (-) TimerEvent: {}
+[9.675916] (-) TimerEvent: {}
+[9.778572] (-) TimerEvent: {}
+[9.879194] (-) TimerEvent: {}
+[9.979718] (-) TimerEvent: {}
+[10.084123] (-) TimerEvent: {}
+[10.184536] (-) TimerEvent: {}
+[10.284928] (-) TimerEvent: {}
+[10.385319] (-) TimerEvent: {}
+[10.485798] (-) TimerEvent: {}
+[10.586404] (-) TimerEvent: {}
+[10.686797] (-) TimerEvent: {}
+[10.787207] (-) TimerEvent: {}
+[10.887599] (-) TimerEvent: {}
+[10.988047] (-) TimerEvent: {}
+[11.088463] (-) TimerEvent: {}
+[11.188871] (-) TimerEvent: {}
+[11.289333] (-) TimerEvent: {}
+[11.389793] (-) TimerEvent: {}
+[11.490263] (-) TimerEvent: {}
+[11.590686] (-) TimerEvent: {}
+[11.691113] (-) TimerEvent: {}
+[11.791521] (-) TimerEvent: {}
+[11.891980] (-) TimerEvent: {}
+[11.992393] (-) TimerEvent: {}
+[12.092808] (-) TimerEvent: {}
+[12.193226] (-) TimerEvent: {}
+[12.293634] (-) TimerEvent: {}
+[12.394072] (-) TimerEvent: {}
+[12.494528] (-) TimerEvent: {}
+[12.594948] (-) TimerEvent: {}
+[12.695318] (-) TimerEvent: {}
+[12.795703] (-) TimerEvent: {}
+[12.896028] (-) TimerEvent: {}
+[12.996379] (-) TimerEvent: {}
+[13.096813] (-) TimerEvent: {}
+[13.197369] (-) TimerEvent: {}
+[13.297794] (-) TimerEvent: {}
+[13.398235] (-) TimerEvent: {}
+[13.498671] (-) TimerEvent: {}
+[13.567789] (qualisys_driver) StdoutLine: {'line': b'-- Found ament_lint_auto: 0.12.14 (/opt/ros/humble/share/ament_lint_auto/cmake)\n'}
+[13.598802] (-) TimerEvent: {}
+[13.699208] (-) TimerEvent: {}
+[13.766819] (qualisys_driver) StdoutLine: {'line': b"-- Added test 'copyright' to check source files copyright and LICENSE\n"}
+[13.770314] (qualisys_driver) StdoutLine: {'line': b"-- Added test 'cppcheck' to perform static code analysis on C / C++ code\n"}
+[13.770862] (qualisys_driver) StdoutLine: {'line': b'-- Configured cppcheck include dirs: /home/user/Projects/svea_charging/src/mocap4ros2_qualisys/qualisys_driver/include\n'}
+[13.771108] (qualisys_driver) StdoutLine: {'line': b'-- Configured cppcheck exclude dirs and/or files: \n'}
+[13.773728] (qualisys_driver) StdoutLine: {'line': b"-- Added test 'cpplint' to check C / C++ code against the Google style\n"}
+[13.773996] (qualisys_driver) StdoutLine: {'line': b'-- Configured cpplint exclude dirs and/or files: \n'}
+[13.774896] (qualisys_driver) StdoutLine: {'line': b"-- Added test 'flake8' to check Python code syntax and style conventions\n"}
+[13.776351] (qualisys_driver) StdoutLine: {'line': b"-- Added test 'lint_cmake' to check CMake code style\n"}
+[13.777470] (qualisys_driver) StdoutLine: {'line': b"-- Added test 'pep257' to check Python code against some of the docstring style conventions in PEP 257\n"}
+[13.780143] (qualisys_driver) StdoutLine: {'line': b"-- Added test 'uncrustify' to check C / C++ code style\n"}
+[13.780459] (qualisys_driver) StdoutLine: {'line': b'-- Configured uncrustify additional arguments: \n'}
+[13.781335] (qualisys_driver) StdoutLine: {'line': b"-- Added test 'xmllint' to check XML markup files\n"}
+[13.792582] (qualisys_driver) StdoutLine: {'line': b'-- Configuring done\n'}
+[13.799308] (-) TimerEvent: {}
+[13.834888] (qualisys_driver) StdoutLine: {'line': b'-- Generating done\n'}
+[13.850634] (qualisys_driver) StdoutLine: {'line': b'-- Build files have been written to: /home/user/Projects/svea_charging/build/qualisys_driver\n'}
+[13.883801] (qualisys_driver) CommandEnded: {'returncode': 0}
+[13.884785] (qualisys_driver) JobProgress: {'identifier': 'qualisys_driver', 'progress': 'build'}
+[13.884858] (qualisys_driver) Command: {'cmd': ['/usr/bin/cmake', '--build', '/home/user/Projects/svea_charging/build/qualisys_driver', '--', '-j4', '-l4'], 'cwd': '/home/user/Projects/svea_charging/build/qualisys_driver', 'env': OrderedDict([('LESSOPEN', '| /usr/bin/lesspipe %s'), ('VSCODE_CWD', '/home/user'), ('VSCODE_ESM_ENTRYPOINT', 'vs/workbench/api/node/extensionHostProcess'), ('CODEX_CI', '1'), ('USER', 'user'), ('SSH_CLIENT', '10.0.0.38 54360 22'), ('LC_TIME', 'sv_SE.UTF-8'), ('CODEX_INTERNAL_ORIGINATOR_OVERRIDE', 'codex_vscode'), ('VSCODE_NLS_CONFIG', '{"userLocale":"en","osLocale":"en","resolvedLanguage":"en","defaultMessagesFile":"/home/user/.vscode-server/cli/servers/Stable-7d842fb85a0275a4a8e4d7e040d2625abbf7f084/server/out/nls.messages.json","locale":"en","availableLanguages":{}}'), ('VSCODE_HANDLES_UNCAUGHT_ERRORS', 'true'), ('XDG_SESSION_TYPE', 'tty'), ('DEBUG', 'release'), ('SHLVL', '1'), ('LD_LIBRARY_PATH', '/usr/local/cuda/lib64:/opt/ros/humble/opt/rviz_ogre_vendor/lib:/opt/ros/humble/lib/aarch64-linux-gnu:/opt/ros/humble/lib'), ('BROWSER', '/home/user/.vscode-server/cli/servers/Stable-7d842fb85a0275a4a8e4d7e040d2625abbf7f084/server/bin/helpers/browser.sh'), ('MOTD_SHOWN', 'pam'), ('HOME', '/home/user'), ('OLDPWD', '/home/user/.vscode-server'), ('VSCODE_IPC_HOOK_CLI', '/run/user/1000/vscode-ipc-5c568adb-495e-404c-9c52-a08fa10fce36.sock'), ('ROS_PYTHON_VERSION', '3'), ('PAGER', 'cat'), ('LC_MONETARY', 'sv_SE.UTF-8'), ('LC_CTYPE', 'C.UTF-8'), ('SSL_CERT_FILE', '/usr/lib/ssl/certs/ca-certificates.crt'), ('NO_COLOR', '1'), ('DBUS_SESSION_BUS_ADDRESS', 'unix:path=/run/user/1000/bus'), ('COLORTERM', ''), ('VSCODE_L10N_BUNDLE_LOCATION', ''), ('APPLICATION_INSIGHTS_NO_STATSBEAT', 'true'), ('ROS_DISTRO', 'humble'), ('LOGNAME', 'user'), ('VSCODE_HANDLES_SIGPIPE', 'true'), ('_', '/usr/bin/colcon'), ('ROS_VERSION', '2'), ('XDG_SESSION_CLASS', 'user'), ('RUST_LOG', 'warn'), ('TERM', 'dumb'), ('XDG_SESSION_ID', '5'), ('VSCODE_CLI_REQUIRE_TOKEN', '2c116258-af0b-4f68-a1e9-9ef63b8863cf'), ('ROS_LOCALHOST_ONLY', '0'), ('PATH', '/home/user/.local/bin:/home/user/.codex/tmp/arg0/codex-arg06v5S29:/home/user/.vscode-server/cli/servers/Stable-7d842fb85a0275a4a8e4d7e040d2625abbf7f084/server/bin/remote-cli:/home/user/.local/bin:/usr/local/cuda/bin:/opt/ros/humble/bin:/home/user/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/home/user/.vscode-server/extensions/openai.chatgpt-26.519.32039-linux-arm64/bin/linux-aarch64'), ('VSCODE_AGENT_FOLDER', '/home/user/.vscode-server'), ('LC_ADDRESS', 'sv_SE.UTF-8'), ('XDG_RUNTIME_DIR', '/run/user/1000'), ('SSL_CERT_DIR', '/usr/lib/ssl/certs'), ('CODEX_SANDBOX_NETWORK_DISABLED', '1'), ('LANG', 'C.UTF-8'), ('LC_TELEPHONE', 'sv_SE.UTF-8'), ('GH_PAGER', 'cat'), ('LS_COLORS', ''), ('AMENT_PREFIX_PATH', '/opt/ros/humble'), ('SHELL', '/bin/bash'), ('LC_NAME', 'sv_SE.UTF-8'), ('ELECTRON_RUN_AS_NODE', '1'), ('LESSCLOSE', '/usr/bin/lesspipe %s %s'), ('CODEX_THREAD_ID', '019e6df1-c827-7160-993d-e6787eb44b8a'), ('LC_MEASUREMENT', 'sv_SE.UTF-8'), ('LC_IDENTIFICATION', 'sv_SE.UTF-8'), ('GIT_PAGER', 'cat'), ('PWD', '/home/user/Projects/svea_charging/build/qualisys_driver'), ('LC_ALL', 'C.UTF-8'), ('SSH_CONNECTION', '10.0.0.38 54360 10.0.8.44 22'), ('XDG_DATA_DIRS', '/usr/share/gnome:/usr/local/share:/usr/share:/var/lib/snapd/desktop'), ('PYTHONPATH', '/opt/ros/humble/lib/python3.10/site-packages:/opt/ros/humble/local/lib/python3.10/dist-packages'), ('LC_NUMERIC', 'sv_SE.UTF-8'), ('LC_PAPER', 'sv_SE.UTF-8'), ('COLCON', '1'), ('CMAKE_PREFIX_PATH', '/opt/ros/humble')]), 'shell': False}
+[13.899496] (-) TimerEvent: {}
+[13.980299] (qualisys_driver) StdoutLine: {'line': b'[ 11%] Building CXX object _deps/qualisys_cpp_sdk-build/CMakeFiles/qualisys_cpp_sdk.dir/Markup.cpp.o\n'}
+[13.999718] (-) TimerEvent: {}
+[14.100138] (-) TimerEvent: {}
+[14.200594] (-) TimerEvent: {}
+[14.301062] (-) TimerEvent: {}
+[14.360669] (qualisys_driver) StderrLine: {'line': b'In file included from /home/user/Projects/svea_charging/build/qualisys_driver/_deps/qualisys_cpp_sdk-src/Markup.cpp:18:\n'}
+[14.361291] (qualisys_driver) StderrLine: {'line': b'/home/user/Projects/svea_charging/build/qualisys_driver/_deps/qualisys_cpp_sdk-src/Markup.h: In copy constructor \xe2\x80\x98CMarkup::ElemPos::ElemPos(const CMarkup::ElemPos&)\xe2\x80\x99:\n'}
+[14.361505] (qualisys_driver) StderrLine: {'line': b'/home/user/Projects/svea_charging/build/qualisys_driver/_deps/qualisys_cpp_sdk-src/Markup.h:89:55: warning: implicitly-declared \xe2\x80\x98constexpr CMarkup::ElemPos& CMarkup::ElemPos::operator=(const CMarkup::ElemPos&)\xe2\x80\x99 is deprecated [-Wdeprecated-copy]\n'}
+[14.361713] (qualisys_driver) StderrLine: {'line': b'   89 |                 ElemPos(const ElemPos& pos) { *this = pos; };\n'}
+[14.361883] (qualisys_driver) StderrLine: {'line': b'      |                                                       ^~~\n'}
+[14.362047] (qualisys_driver) StderrLine: {'line': b'/home/user/Projects/svea_charging/build/qualisys_driver/_deps/qualisys_cpp_sdk-src/Markup.h:89:17: note: because \xe2\x80\x98CMarkup::ElemPos\xe2\x80\x99 has user-provided \xe2\x80\x98CMarkup::ElemPos::ElemPos(const CMarkup::ElemPos&)\xe2\x80\x99\n'}
+[14.362209] (qualisys_driver) StderrLine: {'line': b'   89 |                 ElemPos(const ElemPos& pos) { *this = pos; };\n'}
+[14.362363] (qualisys_driver) StderrLine: {'line': b'      |                 ^~~~~~~\n'}
+[14.401226] (-) TimerEvent: {}
+[14.501681] (-) TimerEvent: {}
+[14.602130] (-) TimerEvent: {}
+[14.702555] (-) TimerEvent: {}
+[14.802989] (-) TimerEvent: {}
+[14.894551] (qualisys_driver) StdoutLine: {'line': b'[ 22%] Building CXX object _deps/qualisys_cpp_sdk-build/CMakeFiles/qualisys_cpp_sdk.dir/RTProtocol.cpp.o\n'}
+[14.903141] (-) TimerEvent: {}
+[15.003544] (-) TimerEvent: {}
+[15.104032] (-) TimerEvent: {}
+[15.204506] (-) TimerEvent: {}
+[15.304986] (-) TimerEvent: {}
+[15.405447] (-) TimerEvent: {}
+[15.505910] (-) TimerEvent: {}
+[15.606364] (-) TimerEvent: {}
+[15.706808] (-) TimerEvent: {}
+[15.807278] (-) TimerEvent: {}
+[15.872278] (qualisys_driver) StderrLine: {'line': b'In file included from /home/user/Projects/svea_charging/build/qualisys_driver/_deps/qualisys_cpp_sdk-src/RTProtocol.cpp:17:\n'}
+[15.872832] (qualisys_driver) StderrLine: {'line': b'/home/user/Projects/svea_charging/build/qualisys_driver/_deps/qualisys_cpp_sdk-src/Markup.h: In copy constructor \xe2\x80\x98CMarkup::ElemPos::ElemPos(const CMarkup::ElemPos&)\xe2\x80\x99:\n'}
+[15.873038] (qualisys_driver) StderrLine: {'line': b'/home/user/Projects/svea_charging/build/qualisys_driver/_deps/qualisys_cpp_sdk-src/Markup.h:89:55: warning: implicitly-declared \xe2\x80\x98constexpr CMarkup::ElemPos& CMarkup::ElemPos::operator=(const CMarkup::ElemPos&)\xe2\x80\x99 is deprecated [-Wdeprecated-copy]\n'}
+[15.873214] (qualisys_driver) StderrLine: {'line': b'   89 |                 ElemPos(const ElemPos& pos) { *this = pos; };\n'}
+[15.873434] (qualisys_driver) StderrLine: {'line': b'      |                                                       ^~~\n'}
+[15.873595] (qualisys_driver) StderrLine: {'line': b'/home/user/Projects/svea_charging/build/qualisys_driver/_deps/qualisys_cpp_sdk-src/Markup.h:89:17: note: because \xe2\x80\x98CMarkup::ElemPos\xe2\x80\x99 has user-provided \xe2\x80\x98CMarkup::ElemPos::ElemPos(const CMarkup::ElemPos&)\xe2\x80\x99\n'}
+[15.873773] (qualisys_driver) StderrLine: {'line': b'   89 |                 ElemPos(const ElemPos& pos) { *this = pos; };\n'}
+[15.873917] (qualisys_driver) StderrLine: {'line': b'      |                 ^~~~~~~\n'}
+[15.907433] (-) TimerEvent: {}
+[16.007802] (-) TimerEvent: {}
+[16.108251] (-) TimerEvent: {}
+[16.208717] (-) TimerEvent: {}
+[16.309180] (-) TimerEvent: {}
+[16.409643] (-) TimerEvent: {}
+[16.510109] (-) TimerEvent: {}
+[16.610565] (-) TimerEvent: {}
+[16.711021] (-) TimerEvent: {}
+[16.811479] (-) TimerEvent: {}
+[16.911963] (-) TimerEvent: {}
+[16.983115] (qualisys_driver) StderrLine: {'line': b'/home/user/Projects/svea_charging/build/qualisys_driver/_deps/qualisys_cpp_sdk-src/RTProtocol.cpp: In member function \xe2\x80\x98bool CRTProtocol::GetCapture(const char*, bool)\xe2\x80\x99:\n'}
+[16.983675] (qualisys_driver) StderrLine: {'line': b'/home/user/Projects/svea_charging/build/qualisys_driver/_deps/qualisys_cpp_sdk-src/RTProtocol.cpp:651:66: warning: \xe2\x80\x98%s\xe2\x80\x99 directive writing up to 1023 bytes into a region of size 1004 [-Wformat-overflow=]\n'}
+[16.983886] (qualisys_driver) StderrLine: {'line': b'  651 |                         sprintf(maErrorStr, "No packet received. %s.", maErrorStr);\n'}
+[16.984058] (qualisys_driver) StderrLine: {'line': b'      |                                                                  ^~\n'}
+[16.984221] (qualisys_driver) StderrLine: {'line': b'/home/user/Projects/svea_charging/build/qualisys_driver/_deps/qualisys_cpp_sdk-src/RTProtocol.cpp:651:32: note: \xe2\x80\x98sprintf\xe2\x80\x99 output between 22 and 1045 bytes into a destination of size 1024\n'}
+[16.984380] (qualisys_driver) StderrLine: {'line': b'  651 |                         sprintf(maErrorStr, "No packet received. %s.", maErrorStr);\n'}
+[16.984530] (qualisys_driver) StderrLine: {'line': b'      |                         ~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n'}
+[17.012092] (-) TimerEvent: {}
+[17.029376] (qualisys_driver) StderrLine: {'line': b'/home/user/Projects/svea_charging/build/qualisys_driver/_deps/qualisys_cpp_sdk-src/RTProtocol.cpp:651:32: warning: \xe2\x80\x98sprintf\xe2\x80\x99 argument 3 overlaps destination object \xe2\x80\x98this\xe2\x80\x99 [-Wrestrict]\n'}
+[17.029846] (qualisys_driver) StderrLine: {'line': b'/home/user/Projects/svea_charging/build/qualisys_driver/_deps/qualisys_cpp_sdk-src/RTProtocol.cpp:580:62: note: destination object referenced by \xe2\x80\x98restrict\xe2\x80\x99-qualified argument 1 was declared here\n'}
+[17.030035] (qualisys_driver) StderrLine: {'line': b'  580 | bool CRTProtocol::GetCapture(const char* pFileName, bool bC3D)\n'}
+[17.030189] (qualisys_driver) StderrLine: {'line': b'      |                                                              ^\n'}
+[17.112287] (-) TimerEvent: {}
+[17.212742] (-) TimerEvent: {}
+[17.313194] (-) TimerEvent: {}
+[17.413680] (-) TimerEvent: {}
+[17.514135] (-) TimerEvent: {}
+[17.614606] (-) TimerEvent: {}
+[17.715029] (-) TimerEvent: {}
+[17.815450] (-) TimerEvent: {}
+[17.915944] (-) TimerEvent: {}
+[18.016365] (-) TimerEvent: {}
+[18.116787] (-) TimerEvent: {}
+[18.217214] (-) TimerEvent: {}
+[18.317641] (-) TimerEvent: {}
+[18.418071] (-) TimerEvent: {}
+[18.518498] (-) TimerEvent: {}
+[18.618935] (-) TimerEvent: {}
+[18.719368] (-) TimerEvent: {}
+[18.819800] (-) TimerEvent: {}
+[18.920224] (-) TimerEvent: {}
+[19.020645] (-) TimerEvent: {}
+[19.121079] (-) TimerEvent: {}
+[19.221511] (-) TimerEvent: {}
+[19.321948] (-) TimerEvent: {}
+[19.422380] (-) TimerEvent: {}
+[19.522808] (-) TimerEvent: {}
+[19.623259] (-) TimerEvent: {}
+[19.723732] (-) TimerEvent: {}
+[19.824173] (-) TimerEvent: {}
+[19.924605] (-) TimerEvent: {}
+[20.025027] (-) TimerEvent: {}
+[20.125454] (-) TimerEvent: {}
+[20.225880] (-) TimerEvent: {}
+[20.326301] (-) TimerEvent: {}
+[20.426720] (-) TimerEvent: {}
+[20.527153] (-) TimerEvent: {}
+[20.627590] (-) TimerEvent: {}
+[20.728045] (-) TimerEvent: {}
+[20.828474] (-) TimerEvent: {}
+[20.929158] (-) TimerEvent: {}
+[21.029624] (-) TimerEvent: {}
+[21.080199] (qualisys_driver) StdoutLine: {'line': b'[ 33%] Building CXX object _deps/qualisys_cpp_sdk-build/CMakeFiles/qualisys_cpp_sdk.dir/RTPacket.cpp.o\n'}
+[21.129776] (-) TimerEvent: {}
+[21.230197] (-) TimerEvent: {}
+[21.330663] (-) TimerEvent: {}
+[21.431112] (-) TimerEvent: {}
+[21.531565] (-) TimerEvent: {}
+[21.631999] (-) TimerEvent: {}
+[21.732417] (-) TimerEvent: {}
+[21.742171] (qualisys_driver) StdoutLine: {'line': b'[ 44%] Building CXX object _deps/qualisys_cpp_sdk-build/CMakeFiles/qualisys_cpp_sdk.dir/Network.cpp.o\n'}
+[21.832600] (-) TimerEvent: {}
+[21.933060] (-) TimerEvent: {}
+[22.033529] (-) TimerEvent: {}
+[22.134088] (-) TimerEvent: {}
+[22.234526] (-) TimerEvent: {}
+[22.334987] (-) TimerEvent: {}
+[22.433498] (qualisys_driver) StdoutLine: {'line': b'[ 55%] Linking CXX static library libqualisys_cpp_sdk.a\n'}
+[22.435135] (-) TimerEvent: {}
+[22.535498] (-) TimerEvent: {}
+[22.585698] (qualisys_driver) StdoutLine: {'line': b'[ 55%] Built target qualisys_cpp_sdk\n'}
+[22.634617] (qualisys_driver) StdoutLine: {'line': b'[ 66%] Building CXX object CMakeFiles/qualisys_driver.dir/src/qualisys_driver.cpp.o\n'}
+[22.635553] (-) TimerEvent: {}
+[22.735921] (-) TimerEvent: {}
+[22.836430] (-) TimerEvent: {}
+[22.936867] (-) TimerEvent: {}
+[23.037292] (-) TimerEvent: {}
+[23.137697] (-) TimerEvent: {}
+[23.238109] (-) TimerEvent: {}
+[23.338559] (-) TimerEvent: {}
+[23.438977] (-) TimerEvent: {}
+[23.539398] (-) TimerEvent: {}
+[23.639799] (-) TimerEvent: {}
+[23.740276] (-) TimerEvent: {}
+[23.840715] (-) TimerEvent: {}
+[23.941158] (-) TimerEvent: {}
+[24.041579] (-) TimerEvent: {}
+[24.142006] (-) TimerEvent: {}
+[24.242464] (-) TimerEvent: {}
+[24.342888] (-) TimerEvent: {}
+[24.443386] (-) TimerEvent: {}
+[24.543880] (-) TimerEvent: {}
+[24.644337] (-) TimerEvent: {}
+[24.744781] (-) TimerEvent: {}
+[24.845238] (-) TimerEvent: {}
+[24.945670] (-) TimerEvent: {}
+[25.046123] (-) TimerEvent: {}
+[25.146581] (-) TimerEvent: {}
+[25.247046] (-) TimerEvent: {}
+[25.347500] (-) TimerEvent: {}
+[25.447945] (-) TimerEvent: {}
+[25.548376] (-) TimerEvent: {}
+[25.648818] (-) TimerEvent: {}
+[25.749274] (-) TimerEvent: {}
+[25.849723] (-) TimerEvent: {}
+[25.950165] (-) TimerEvent: {}
+[26.050823] (-) TimerEvent: {}
+[26.151275] (-) TimerEvent: {}
+[26.251771] (-) TimerEvent: {}
+[26.352262] (-) TimerEvent: {}
+[26.452746] (-) TimerEvent: {}
+[26.553170] (-) TimerEvent: {}
+[26.653610] (-) TimerEvent: {}
+[26.754118] (-) TimerEvent: {}
+[26.854561] (-) TimerEvent: {}
+[26.955021] (-) TimerEvent: {}
+[27.055481] (-) TimerEvent: {}
+[27.155975] (-) TimerEvent: {}
+[27.256410] (-) TimerEvent: {}
+[27.356850] (-) TimerEvent: {}
+[27.457299] (-) TimerEvent: {}
+[27.557742] (-) TimerEvent: {}
+[27.658208] (-) TimerEvent: {}
+[27.758636] (-) TimerEvent: {}
+[27.859088] (-) TimerEvent: {}
+[27.959535] (-) TimerEvent: {}
+[28.059986] (-) TimerEvent: {}
+[28.161096] (-) TimerEvent: {}
+[28.261545] (-) TimerEvent: {}
+[28.361985] (-) TimerEvent: {}
+[28.462401] (-) TimerEvent: {}
+[28.562833] (-) TimerEvent: {}
+[28.663284] (-) TimerEvent: {}
+[28.763744] (-) TimerEvent: {}
+[28.864174] (-) TimerEvent: {}
+[28.964621] (-) TimerEvent: {}
+[29.065057] (-) TimerEvent: {}
+[29.165480] (-) TimerEvent: {}
+[29.265914] (-) TimerEvent: {}
+[29.366347] (-) TimerEvent: {}
+[29.466762] (-) TimerEvent: {}
+[29.567186] (-) TimerEvent: {}
+[29.581133] (qualisys_driver) StderrLine: {'line': b'/home/user/Projects/svea_charging/src/mocap4ros2_qualisys/qualisys_driver/src/qualisys_driver.cpp: In member function \xe2\x80\x98void QualisysDriver::loop()\xe2\x80\x99:\n'}
+[29.581662] (qualisys_driver) StderrLine: {'line': b'/home/user/Projects/svea_charging/src/mocap4ros2_qualisys/qualisys_driver/src/qualisys_driver.cpp:83:37: warning: \xe2\x80\x98int CRTProtocol::ReceiveRTPacket(CRTPacket::EPacketType&, bool, int)\xe2\x80\x99 is deprecated: Replaced by Receive. [-Wdeprecated-declarations]\n'}
+[29.581904] (qualisys_driver) StderrLine: {'line': b'   83 |   if (port_protocol_.ReceiveRTPacket(e_type, true)) {\n'}
+[29.582081] (qualisys_driver) StderrLine: {'line': b'      |       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~\n'}
+[29.582237] (qualisys_driver) StderrLine: {'line': b'In file included from /home/user/Projects/svea_charging/src/mocap4ros2_qualisys/qualisys_driver/include/qualisys_driver/qualisys_driver.hpp:53,\n'}
+[29.582427] (qualisys_driver) StderrLine: {'line': b'                 from /home/user/Projects/svea_charging/src/mocap4ros2_qualisys/qualisys_driver/src/qualisys_driver.cpp:27:\n'}
+[29.582580] (qualisys_driver) StderrLine: {'line': b'/home/user/Projects/svea_charging/build/qualisys_driver/_deps/qualisys_cpp_sdk-src/RTProtocol.h:718:17: note: declared here\n'}
+[29.582724] (qualisys_driver) StderrLine: {'line': b'  718 |     int         ReceiveRTPacket(CRTPacket::EPacketType &eType, bool bSkipEvents = true, int nTimeout = cWaitForDataTimeout); // nTimeout < 0 : Blocking receive\n'}
+[29.582872] (qualisys_driver) StderrLine: {'line': b'      |                 ^~~~~~~~~~~~~~~\n'}
+[29.667362] (-) TimerEvent: {}
+[29.767795] (-) TimerEvent: {}
+[29.868218] (-) TimerEvent: {}
+[29.968627] (-) TimerEvent: {}
+[30.069478] (-) TimerEvent: {}
+[30.169926] (-) TimerEvent: {}
+[30.270358] (-) TimerEvent: {}
+[30.370775] (-) TimerEvent: {}
+[30.471205] (-) TimerEvent: {}
+[30.571709] (-) TimerEvent: {}
+[30.672135] (-) TimerEvent: {}
+[30.772574] (-) TimerEvent: {}
+[30.873026] (-) TimerEvent: {}
+[30.973477] (-) TimerEvent: {}
+[31.073914] (-) TimerEvent: {}
+[31.174366] (-) TimerEvent: {}
+[31.274827] (-) TimerEvent: {}
+[31.375267] (-) TimerEvent: {}
+[31.475719] (-) TimerEvent: {}
+[31.576156] (-) TimerEvent: {}
+[31.676567] (-) TimerEvent: {}
+[31.777014] (-) TimerEvent: {}
+[31.877456] (-) TimerEvent: {}
+[31.977874] (-) TimerEvent: {}
+[32.078313] (-) TimerEvent: {}
+[32.178759] (-) TimerEvent: {}
+[32.279244] (-) TimerEvent: {}
+[32.379729] (-) TimerEvent: {}
+[32.480184] (-) TimerEvent: {}
+[32.580650] (-) TimerEvent: {}
+[32.681073] (-) TimerEvent: {}
+[32.781505] (-) TimerEvent: {}
+[32.881962] (-) TimerEvent: {}
+[32.982410] (-) TimerEvent: {}
+[33.082861] (-) TimerEvent: {}
+[33.183292] (-) TimerEvent: {}
+[33.283808] (-) TimerEvent: {}
+[33.384276] (-) TimerEvent: {}
+[33.484726] (-) TimerEvent: {}
+[33.585175] (-) TimerEvent: {}
+[33.685634] (-) TimerEvent: {}
+[33.786080] (-) TimerEvent: {}
+[33.886522] (-) TimerEvent: {}
+[33.986992] (-) TimerEvent: {}
+[34.087476] (-) TimerEvent: {}
+[34.187950] (-) TimerEvent: {}
+[34.288388] (-) TimerEvent: {}
+[34.388839] (-) TimerEvent: {}
+[34.489291] (-) TimerEvent: {}
+[34.589749] (-) TimerEvent: {}
+[34.690209] (-) TimerEvent: {}
+[34.790678] (-) TimerEvent: {}
+[34.891163] (-) TimerEvent: {}
+[34.991614] (-) TimerEvent: {}
+[35.092102] (-) TimerEvent: {}
+[35.192563] (-) TimerEvent: {}
+[35.293014] (-) TimerEvent: {}
+[35.393458] (-) TimerEvent: {}
+[35.493886] (-) TimerEvent: {}
+[35.594330] (-) TimerEvent: {}
+[35.694774] (-) TimerEvent: {}
+[35.795310] (-) TimerEvent: {}
+[35.895786] (-) TimerEvent: {}
+[35.996443] (-) TimerEvent: {}
+[36.098234] (-) TimerEvent: {}
+[36.198706] (-) TimerEvent: {}
+[36.299157] (-) TimerEvent: {}
+[36.399602] (-) TimerEvent: {}
+[36.500081] (-) TimerEvent: {}
+[36.600549] (-) TimerEvent: {}
+[36.701041] (-) TimerEvent: {}
+[36.801507] (-) TimerEvent: {}
+[36.901984] (-) TimerEvent: {}
+[37.002433] (-) TimerEvent: {}
+[37.103005] (-) TimerEvent: {}
+[37.203453] (-) TimerEvent: {}
+[37.303934] (-) TimerEvent: {}
+[37.404382] (-) TimerEvent: {}
+[37.504838] (-) TimerEvent: {}
+[37.605265] (-) TimerEvent: {}
+[37.705703] (-) TimerEvent: {}
+[37.806151] (-) TimerEvent: {}
+[37.907346] (-) TimerEvent: {}
+[38.007809] (-) TimerEvent: {}
+[38.108249] (-) TimerEvent: {}
+[38.208679] (-) TimerEvent: {}
+[38.309091] (-) TimerEvent: {}
+[38.409802] (-) TimerEvent: {}
+[38.510266] (-) TimerEvent: {}
+[38.610705] (-) TimerEvent: {}
+[38.711084] (-) TimerEvent: {}
+[38.811519] (-) TimerEvent: {}
+[38.912008] (-) TimerEvent: {}
+[39.012432] (-) TimerEvent: {}
+[39.112868] (-) TimerEvent: {}
+[39.213300] (-) TimerEvent: {}
+[39.313738] (-) TimerEvent: {}
+[39.414165] (-) TimerEvent: {}
+[39.514592] (-) TimerEvent: {}
+[39.614999] (-) TimerEvent: {}
+[39.715424] (-) TimerEvent: {}
+[39.815905] (-) TimerEvent: {}
+[39.916448] (-) TimerEvent: {}
+[40.017798] (-) TimerEvent: {}
+[40.118278] (-) TimerEvent: {}
+[40.218725] (-) TimerEvent: {}
+[40.319218] (-) TimerEvent: {}
+[40.419699] (-) TimerEvent: {}
+[40.520228] (-) TimerEvent: {}
+[40.620714] (-) TimerEvent: {}
+[40.721167] (-) TimerEvent: {}
+[40.821627] (-) TimerEvent: {}
+[40.922089] (-) TimerEvent: {}
+[40.942945] (qualisys_driver) StdoutLine: {'line': b'[ 77%] Linking CXX static library libqualisys_driver.a\n'}
+[41.022275] (-) TimerEvent: {}
+[41.122708] (-) TimerEvent: {}
+[41.223829] (-) TimerEvent: {}
+[41.315564] (qualisys_driver) StdoutLine: {'line': b'[ 77%] Built target qualisys_driver\n'}
+[41.325197] (-) TimerEvent: {}
+[41.407979] (qualisys_driver) StdoutLine: {'line': b'[ 88%] Building CXX object CMakeFiles/qualisys_driver_main.dir/src/qualisys_driver_main.cpp.o\n'}
+[41.425345] (-) TimerEvent: {}
+[41.526269] (-) TimerEvent: {}
+[41.631805] (-) TimerEvent: {}
+[41.732434] (-) TimerEvent: {}
+[41.833228] (-) TimerEvent: {}
+[41.933860] (-) TimerEvent: {}
+[42.034957] (-) TimerEvent: {}
+[42.135392] (-) TimerEvent: {}
+[42.235881] (-) TimerEvent: {}
+[42.336354] (-) TimerEvent: {}
+[42.436850] (-) TimerEvent: {}
+[42.537308] (-) TimerEvent: {}
+[42.637759] (-) TimerEvent: {}
+[42.738214] (-) TimerEvent: {}
+[42.838679] (-) TimerEvent: {}
+[42.939138] (-) TimerEvent: {}
+[43.039605] (-) TimerEvent: {}
+[43.140089] (-) TimerEvent: {}
+[43.240537] (-) TimerEvent: {}
+[43.341002] (-) TimerEvent: {}
+[43.478680] (-) TimerEvent: {}
+[43.579151] (-) TimerEvent: {}
+[43.679640] (-) TimerEvent: {}
+[43.780114] (-) TimerEvent: {}
+[43.880634] (-) TimerEvent: {}
+[43.981088] (-) TimerEvent: {}
+[44.081543] (-) TimerEvent: {}
+[44.181965] (-) TimerEvent: {}
+[44.282434] (-) TimerEvent: {}
+[44.382903] (-) TimerEvent: {}
+[44.483353] (-) TimerEvent: {}
+[44.583802] (-) TimerEvent: {}
+[44.684341] (-) TimerEvent: {}
+[44.784804] (-) TimerEvent: {}
+[44.885283] (-) TimerEvent: {}
+[44.985761] (-) TimerEvent: {}
+[45.086196] (-) TimerEvent: {}
+[45.186653] (-) TimerEvent: {}
+[45.287125] (-) TimerEvent: {}
+[45.387611] (-) TimerEvent: {}
+[45.488075] (-) TimerEvent: {}
+[45.588515] (-) TimerEvent: {}
+[45.688950] (-) TimerEvent: {}
+[45.789396] (-) TimerEvent: {}
+[45.889865] (-) TimerEvent: {}
+[45.990318] (-) TimerEvent: {}
+[46.094220] (-) TimerEvent: {}
+[46.194660] (-) TimerEvent: {}
+[46.295132] (-) TimerEvent: {}
+[46.395613] (-) TimerEvent: {}
+[46.496090] (-) TimerEvent: {}
+[46.596573] (-) TimerEvent: {}
+[46.697044] (-) TimerEvent: {}
+[46.797502] (-) TimerEvent: {}
+[46.897964] (-) TimerEvent: {}
+[46.998424] (-) TimerEvent: {}
+[47.100559] (-) TimerEvent: {}
+[47.201016] (-) TimerEvent: {}
+[47.301464] (-) TimerEvent: {}
+[47.401923] (-) TimerEvent: {}
+[47.502376] (-) TimerEvent: {}
+[47.602827] (-) TimerEvent: {}
+[47.703276] (-) TimerEvent: {}
+[47.803709] (-) TimerEvent: {}
+[47.904161] (-) TimerEvent: {}
+[48.004863] (-) TimerEvent: {}
+[48.105335] (-) TimerEvent: {}
+[48.205780] (-) TimerEvent: {}
+[48.306268] (-) TimerEvent: {}
+[48.406749] (-) TimerEvent: {}
+[48.516915] (-) TimerEvent: {}
+[48.617386] (-) TimerEvent: {}
+[48.717844] (-) TimerEvent: {}
+[48.818336] (-) TimerEvent: {}
+[48.918794] (-) TimerEvent: {}
+[49.019252] (-) TimerEvent: {}
+[49.119728] (-) TimerEvent: {}
+[49.220176] (-) TimerEvent: {}
+[49.320648] (-) TimerEvent: {}
+[49.421134] (-) TimerEvent: {}
+[49.521596] (-) TimerEvent: {}
+[49.622098] (-) TimerEvent: {}
+[49.722584] (-) TimerEvent: {}
+[49.823056] (-) TimerEvent: {}
+[49.923535] (-) TimerEvent: {}
+[50.024014] (-) TimerEvent: {}
+[50.124475] (-) TimerEvent: {}
+[50.224947] (-) TimerEvent: {}
+[50.325405] (-) TimerEvent: {}
+[50.425881] (-) TimerEvent: {}
+[50.526328] (-) TimerEvent: {}
+[50.626858] (-) TimerEvent: {}
+[50.727294] (-) TimerEvent: {}
+[50.827795] (-) TimerEvent: {}
+[50.894862] (qualisys_driver) StdoutLine: {'line': b'[100%] Linking CXX executable qualisys_driver_main\n'}
+[50.927978] (-) TimerEvent: {}
+[51.029818] (-) TimerEvent: {}
+[51.130267] (-) TimerEvent: {}
+[51.230736] (-) TimerEvent: {}
+[51.331214] (-) TimerEvent: {}
+[51.431695] (-) TimerEvent: {}
+[51.532183] (-) TimerEvent: {}
+[51.632668] (-) TimerEvent: {}
+[51.733200] (-) TimerEvent: {}
+[51.833655] (-) TimerEvent: {}
+[51.934115] (-) TimerEvent: {}
+[52.034584] (-) TimerEvent: {}
+[52.135079] (-) TimerEvent: {}
+[52.235611] (-) TimerEvent: {}
+[52.336109] (-) TimerEvent: {}
+[52.436514] (-) TimerEvent: {}
+[52.493175] (qualisys_driver) StdoutLine: {'line': b'[100%] Built target qualisys_driver_main\n'}
+[52.538533] (-) TimerEvent: {}
+[52.542649] (qualisys_driver) CommandEnded: {'returncode': 0}
+[52.543753] (qualisys_driver) JobProgress: {'identifier': 'qualisys_driver', 'progress': 'install'}
+[52.577221] (qualisys_driver) Command: {'cmd': ['/usr/bin/cmake', '--install', '/home/user/Projects/svea_charging/build/qualisys_driver'], 'cwd': '/home/user/Projects/svea_charging/build/qualisys_driver', 'env': OrderedDict([('LESSOPEN', '| /usr/bin/lesspipe %s'), ('VSCODE_CWD', '/home/user'), ('VSCODE_ESM_ENTRYPOINT', 'vs/workbench/api/node/extensionHostProcess'), ('CODEX_CI', '1'), ('USER', 'user'), ('SSH_CLIENT', '10.0.0.38 54360 22'), ('LC_TIME', 'sv_SE.UTF-8'), ('CODEX_INTERNAL_ORIGINATOR_OVERRIDE', 'codex_vscode'), ('VSCODE_NLS_CONFIG', '{"userLocale":"en","osLocale":"en","resolvedLanguage":"en","defaultMessagesFile":"/home/user/.vscode-server/cli/servers/Stable-7d842fb85a0275a4a8e4d7e040d2625abbf7f084/server/out/nls.messages.json","locale":"en","availableLanguages":{}}'), ('VSCODE_HANDLES_UNCAUGHT_ERRORS', 'true'), ('XDG_SESSION_TYPE', 'tty'), ('DEBUG', 'release'), ('SHLVL', '1'), ('LD_LIBRARY_PATH', '/usr/local/cuda/lib64:/opt/ros/humble/opt/rviz_ogre_vendor/lib:/opt/ros/humble/lib/aarch64-linux-gnu:/opt/ros/humble/lib'), ('BROWSER', '/home/user/.vscode-server/cli/servers/Stable-7d842fb85a0275a4a8e4d7e040d2625abbf7f084/server/bin/helpers/browser.sh'), ('MOTD_SHOWN', 'pam'), ('HOME', '/home/user'), ('OLDPWD', '/home/user/.vscode-server'), ('VSCODE_IPC_HOOK_CLI', '/run/user/1000/vscode-ipc-5c568adb-495e-404c-9c52-a08fa10fce36.sock'), ('ROS_PYTHON_VERSION', '3'), ('PAGER', 'cat'), ('LC_MONETARY', 'sv_SE.UTF-8'), ('LC_CTYPE', 'C.UTF-8'), ('SSL_CERT_FILE', '/usr/lib/ssl/certs/ca-certificates.crt'), ('NO_COLOR', '1'), ('DBUS_SESSION_BUS_ADDRESS', 'unix:path=/run/user/1000/bus'), ('COLORTERM', ''), ('VSCODE_L10N_BUNDLE_LOCATION', ''), ('APPLICATION_INSIGHTS_NO_STATSBEAT', 'true'), ('ROS_DISTRO', 'humble'), ('LOGNAME', 'user'), ('VSCODE_HANDLES_SIGPIPE', 'true'), ('_', '/usr/bin/colcon'), ('ROS_VERSION', '2'), ('XDG_SESSION_CLASS', 'user'), ('RUST_LOG', 'warn'), ('TERM', 'dumb'), ('XDG_SESSION_ID', '5'), ('VSCODE_CLI_REQUIRE_TOKEN', '2c116258-af0b-4f68-a1e9-9ef63b8863cf'), ('ROS_LOCALHOST_ONLY', '0'), ('PATH', '/home/user/.local/bin:/home/user/.codex/tmp/arg0/codex-arg06v5S29:/home/user/.vscode-server/cli/servers/Stable-7d842fb85a0275a4a8e4d7e040d2625abbf7f084/server/bin/remote-cli:/home/user/.local/bin:/usr/local/cuda/bin:/opt/ros/humble/bin:/home/user/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/home/user/.vscode-server/extensions/openai.chatgpt-26.519.32039-linux-arm64/bin/linux-aarch64'), ('VSCODE_AGENT_FOLDER', '/home/user/.vscode-server'), ('LC_ADDRESS', 'sv_SE.UTF-8'), ('XDG_RUNTIME_DIR', '/run/user/1000'), ('SSL_CERT_DIR', '/usr/lib/ssl/certs'), ('CODEX_SANDBOX_NETWORK_DISABLED', '1'), ('LANG', 'C.UTF-8'), ('LC_TELEPHONE', 'sv_SE.UTF-8'), ('GH_PAGER', 'cat'), ('LS_COLORS', ''), ('AMENT_PREFIX_PATH', '/opt/ros/humble'), ('SHELL', '/bin/bash'), ('LC_NAME', 'sv_SE.UTF-8'), ('ELECTRON_RUN_AS_NODE', '1'), ('LESSCLOSE', '/usr/bin/lesspipe %s %s'), ('CODEX_THREAD_ID', '019e6df1-c827-7160-993d-e6787eb44b8a'), ('LC_MEASUREMENT', 'sv_SE.UTF-8'), ('LC_IDENTIFICATION', 'sv_SE.UTF-8'), ('GIT_PAGER', 'cat'), ('PWD', '/home/user/Projects/svea_charging/build/qualisys_driver'), ('LC_ALL', 'C.UTF-8'), ('SSH_CONNECTION', '10.0.0.38 54360 10.0.8.44 22'), ('XDG_DATA_DIRS', '/usr/share/gnome:/usr/local/share:/usr/share:/var/lib/snapd/desktop'), ('PYTHONPATH', '/opt/ros/humble/lib/python3.10/site-packages:/opt/ros/humble/local/lib/python3.10/dist-packages'), ('LC_NUMERIC', 'sv_SE.UTF-8'), ('LC_PAPER', 'sv_SE.UTF-8'), ('COLCON', '1'), ('CMAKE_PREFIX_PATH', '/opt/ros/humble')]), 'shell': False}
+[52.595255] (qualisys_driver) StdoutLine: {'line': b'-- Install configuration: ""\n'}
+[52.597442] (qualisys_driver) StdoutLine: {'line': b'-- Execute custom install script\n'}
+[52.603272] (qualisys_driver) StdoutLine: {'line': b'-- Symlinking: /home/user/Projects/svea_charging/install/qualisys_driver/include//qualisys_driver/qualisys_driver.hpp\n'}
+[52.627753] (qualisys_driver) StdoutLine: {'line': b'-- Symlinking: /home/user/Projects/svea_charging/install/qualisys_driver/share/qualisys_driver/launch/__pycache__/qualisys.launch.cpython-310.pyc\n'}
+[52.638719] (-) TimerEvent: {}
+[52.650703] (qualisys_driver) StdoutLine: {'line': b'-- Symlinking: /home/user/Projects/svea_charging/install/qualisys_driver/share/qualisys_driver/launch/qualisys.launch.py\n'}
+[52.680604] (qualisys_driver) StdoutLine: {'line': b'-- Symlinking: /home/user/Projects/svea_charging/install/qualisys_driver/share/qualisys_driver/config/qualisys_driver_params.yaml\n'}
+[52.701586] (qualisys_driver) StdoutLine: {'line': b'-- Symlinking: /home/user/Projects/svea_charging/install/qualisys_driver/lib/libqualisys_driver.a\n'}
+[52.723690] (qualisys_driver) StdoutLine: {'line': b'-- Symlinking: /home/user/Projects/svea_charging/install/qualisys_driver/lib/qualisys_driver/qualisys_driver_main\n'}
+[52.738899] (-) TimerEvent: {}
+[52.748624] (qualisys_driver) StdoutLine: {'line': b'-- Symlinking: /home/user/Projects/svea_charging/install/qualisys_driver/share/qualisys_driver/environment/library_path.sh\n'}
+[52.770007] (qualisys_driver) StdoutLine: {'line': b'-- Symlinking: /home/user/Projects/svea_charging/install/qualisys_driver/share/qualisys_driver/environment/library_path.dsv\n'}
+[52.792421] (qualisys_driver) StdoutLine: {'line': b'-- Symlinking: /home/user/Projects/svea_charging/install/qualisys_driver/share/ament_index/resource_index/package_run_dependencies/qualisys_driver\n'}
+[52.811719] (qualisys_driver) StdoutLine: {'line': b'-- Symlinking: /home/user/Projects/svea_charging/install/qualisys_driver/share/ament_index/resource_index/parent_prefix_path/qualisys_driver\n'}
+[52.834387] (qualisys_driver) StdoutLine: {'line': b'-- Symlinking: /home/user/Projects/svea_charging/install/qualisys_driver/share/qualisys_driver/environment/ament_prefix_path.sh\n'}
+[52.839064] (-) TimerEvent: {}
+[52.853885] (qualisys_driver) StdoutLine: {'line': b'-- Symlinking: /home/user/Projects/svea_charging/install/qualisys_driver/share/qualisys_driver/environment/ament_prefix_path.dsv\n'}
+[52.880043] (qualisys_driver) StdoutLine: {'line': b'-- Symlinking: /home/user/Projects/svea_charging/install/qualisys_driver/share/qualisys_driver/environment/path.sh\n'}
+[52.899026] (qualisys_driver) StdoutLine: {'line': b'-- Symlinking: /home/user/Projects/svea_charging/install/qualisys_driver/share/qualisys_driver/environment/path.dsv\n'}
+[52.924572] (qualisys_driver) StdoutLine: {'line': b'-- Symlinking: /home/user/Projects/svea_charging/install/qualisys_driver/share/qualisys_driver/local_setup.bash\n'}
+[52.939261] (-) TimerEvent: {}
+[52.949978] (qualisys_driver) StdoutLine: {'line': b'-- Symlinking: /home/user/Projects/svea_charging/install/qualisys_driver/share/qualisys_driver/local_setup.sh\n'}
+[52.986814] (qualisys_driver) StdoutLine: {'line': b'-- Symlinking: /home/user/Projects/svea_charging/install/qualisys_driver/share/qualisys_driver/local_setup.zsh\n'}
+[53.009985] (qualisys_driver) StdoutLine: {'line': b'-- Symlinking: /home/user/Projects/svea_charging/install/qualisys_driver/share/qualisys_driver/local_setup.dsv\n'}
+[53.039547] (-) TimerEvent: {}
+[53.046042] (qualisys_driver) StdoutLine: {'line': b'-- Symlinking: /home/user/Projects/svea_charging/install/qualisys_driver/share/qualisys_driver/package.dsv\n'}
+[53.081378] (qualisys_driver) StdoutLine: {'line': b'-- Symlinking: /home/user/Projects/svea_charging/install/qualisys_driver/share/ament_index/resource_index/packages/qualisys_driver\n'}
+[53.108444] (qualisys_driver) StdoutLine: {'line': b'-- Symlinking: /home/user/Projects/svea_charging/install/qualisys_driver/share/qualisys_driver/cmake/ament_cmake_export_include_directories-extras.cmake\n'}
+[53.131343] (qualisys_driver) StdoutLine: {'line': b'-- Symlinking: /home/user/Projects/svea_charging/install/qualisys_driver/share/qualisys_driver/cmake/ament_cmake_export_libraries-extras.cmake\n'}
+[53.140701] (-) TimerEvent: {}
+[53.158511] (qualisys_driver) StdoutLine: {'line': b'-- Symlinking: /home/user/Projects/svea_charging/install/qualisys_driver/share/qualisys_driver/cmake/ament_cmake_export_dependencies-extras.cmake\n'}
+[53.183821] (qualisys_driver) StdoutLine: {'line': b'-- Symlinking: /home/user/Projects/svea_charging/install/qualisys_driver/share/qualisys_driver/cmake/qualisys_driverConfig.cmake\n'}
+[53.207435] (qualisys_driver) StdoutLine: {'line': b'-- Symlinking: /home/user/Projects/svea_charging/install/qualisys_driver/share/qualisys_driver/cmake/qualisys_driverConfig-version.cmake\n'}
+[53.235100] (qualisys_driver) StdoutLine: {'line': b'-- Symlinking: /home/user/Projects/svea_charging/install/qualisys_driver/share/qualisys_driver/package.xml\n'}
+[53.241860] (-) TimerEvent: {}
+[53.263190] (qualisys_driver) StdoutLine: {'line': b'-- Installing: /home/user/Projects/svea_charging/install/qualisys_driver/lib/libqualisys_cpp_sdk.a\n'}
+[53.289967] (qualisys_driver) StdoutLine: {'line': b'-- Installing: /home/user/Projects/svea_charging/install/qualisys_driver/include/qualisys_cpp_sdk/Markup.h\n'}
+[53.290469] (qualisys_driver) StdoutLine: {'line': b'-- Installing: /home/user/Projects/svea_charging/install/qualisys_driver/include/qualisys_cpp_sdk/Network.h\n'}
+[53.290660] (qualisys_driver) StdoutLine: {'line': b'-- Installing: /home/user/Projects/svea_charging/install/qualisys_driver/include/qualisys_cpp_sdk/RTPacket.h\n'}
+[53.290830] (qualisys_driver) StdoutLine: {'line': b'-- Installing: /home/user/Projects/svea_charging/install/qualisys_driver/include/qualisys_cpp_sdk/RTProtocol.h\n'}
+[53.290992] (qualisys_driver) CommandEnded: {'returncode': 0}
+[53.342062] (-) TimerEvent: {}
+[53.442745] (-) TimerEvent: {}
+[53.446759] (qualisys_driver) JobEnded: {'identifier': 'qualisys_driver', 'rc': 0}
+[53.453410] (-) EventReactorShutdown: {}

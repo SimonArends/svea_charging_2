@@ -1,0 +1,27 @@
+[ 11%] Creating directories for 'qualisys_cpp_sdk-populate'
+[ 22%] Performing download step (git clone) for 'qualisys_cpp_sdk-populate'
+Cloning into 'qualisys_cpp_sdk-src'...
+fatal: unable to access 'https://github.com/qualisys/qualisys_cpp_sdk/': Could not resolve host: github.com
+Cloning into 'qualisys_cpp_sdk-src'...
+fatal: unable to access 'https://github.com/qualisys/qualisys_cpp_sdk/': Could not resolve host: github.com
+Cloning into 'qualisys_cpp_sdk-src'...
+fatal: unable to access 'https://github.com/qualisys/qualisys_cpp_sdk/': Could not resolve host: github.com
+-- Had to git clone more than once:
+          3 times.
+CMake Error at qualisys_cpp_sdk-subbuild/qualisys_cpp_sdk-populate-prefix/tmp/qualisys_cpp_sdk-populate-gitclone.cmake:31 (message):
+  Failed to clone repository: 'https://github.com/qualisys/qualisys_cpp_sdk'
+
+
+gmake[2]: *** [CMakeFiles/qualisys_cpp_sdk-populate.dir/build.make:102: qualisys_cpp_sdk-populate-prefix/src/qualisys_cpp_sdk-populate-stamp/qualisys_cpp_sdk-populate-download] Error 1
+gmake[1]: *** [CMakeFiles/Makefile2:83: CMakeFiles/qualisys_cpp_sdk-populate.dir/all] Error 2
+gmake: *** [Makefile:91: all] Error 2
+
+CMake Error at /usr/share/cmake-3.22/Modules/FetchContent.cmake:1087 (message):
+  Build step for qualisys_cpp_sdk failed: 2
+Call Stack (most recent call first):
+  /usr/share/cmake-3.22/Modules/FetchContent.cmake:1216:EVAL:2 (__FetchContent_directPopulate)
+  /usr/share/cmake-3.22/Modules/FetchContent.cmake:1216 (cmake_language)
+  /usr/share/cmake-3.22/Modules/FetchContent.cmake:1259 (FetchContent_Populate)
+  CMakeLists.txt:33 (FetchContent_MakeAvailable)
+
+

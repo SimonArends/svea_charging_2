@@ -1,0 +1,3 @@
+/home/user/Projects/svea_charging/build/qualisys_driver/_deps/qualisys_cpp_sdk-subbuild/CMakeFiles/qualisys_cpp_sdk-populate.dir
+/home/user/Projects/svea_charging/build/qualisys_driver/_deps/qualisys_cpp_sdk-subbuild/CMakeFiles/edit_cache.dir
+/home/user/Projects/svea_charging/build/qualisys_driver/_deps/qualisys_cpp_sdk-subbuild/CMakeFiles/rebuild_cache.dir

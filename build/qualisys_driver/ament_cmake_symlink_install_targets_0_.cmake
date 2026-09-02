@@ -1,0 +1,1 @@
+ament_cmake_symlink_install_targets("TARGET_FILES" "/home/user/Projects/svea_charging/build/qualisys_driver/libqualisys_driver.a" "/home/user/Projects/svea_charging/build/qualisys_driver/qualisys_driver_main" "TARGETS" "qualisys_driver" "qualisys_driver_main" "ARCHIVE_DESTINATION" "lib" "LIBRARY_DESTINATION" "lib" "RUNTIME_DESTINATION" "lib/qualisys_driver")
