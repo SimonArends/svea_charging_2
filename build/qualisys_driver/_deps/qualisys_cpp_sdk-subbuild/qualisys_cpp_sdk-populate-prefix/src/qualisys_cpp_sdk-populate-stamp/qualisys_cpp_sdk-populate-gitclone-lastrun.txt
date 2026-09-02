@@ -1,0 +1,3 @@
+repository='https://github.com/qualisys/qualisys_cpp_sdk'
+module=''
+tag='origin'

@@ -1,0 +1,119 @@
+[0.022s] Invoking command in '/home/user/Projects/svea_charging/build/qualisys_driver': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake /home/user/Projects/svea_charging/src/mocap4ros2_qualisys/qualisys_driver -DAMENT_CMAKE_SYMLINK_INSTALL=1 -DCMAKE_INSTALL_PREFIX=/home/user/Projects/svea_charging/install/qualisys_driver
+[0.050s] -- Found ament_cmake: 1.3.12 (/opt/ros/humble/share/ament_cmake/cmake)
+[0.351s] -- Override CMake install command with custom implementation using symlinks instead of copying resources
+[0.366s] -- Found rclcpp: 16.0.14 (/opt/ros/humble/share/rclcpp/cmake)
+[0.431s] -- Found rosidl_generator_c: 3.1.7 (/opt/ros/humble/share/rosidl_generator_c/cmake)
+[0.438s] -- Found rosidl_adapter: 3.1.7 (/opt/ros/humble/share/rosidl_adapter/cmake)
+[0.452s] -- Found rosidl_generator_cpp: 3.1.7 (/opt/ros/humble/share/rosidl_generator_cpp/cmake)
+[0.473s] -- Using all available rosidl_typesupport_c: rosidl_typesupport_fastrtps_c;rosidl_typesupport_introspection_c
+[0.499s] -- Using all available rosidl_typesupport_cpp: rosidl_typesupport_fastrtps_cpp;rosidl_typesupport_introspection_cpp
+[0.570s] -- Found rmw_implementation_cmake: 6.1.2 (/opt/ros/humble/share/rmw_implementation_cmake/cmake)
+[0.573s] -- Found rmw_fastrtps_cpp: 6.2.8 (/opt/ros/humble/share/rmw_fastrtps_cpp/cmake)
+[0.788s] -- Using RMW implementation 'rmw_fastrtps_cpp' as default
+[0.917s] -- Found rclcpp_lifecycle: 16.0.14 (/opt/ros/humble/share/rclcpp_lifecycle/cmake)
+[0.951s] -- Found tf2: 0.25.16 (/opt/ros/humble/share/tf2/cmake)
+[0.987s] -- Found tf2_ros: 0.25.16 (/opt/ros/humble/share/tf2_ros/cmake)
+[1.154s] -- Found mocap4r2_msgs: 0.0.6 (/opt/ros/humble/share/mocap4r2_msgs/cmake)
+[1.197s] -- qualisys_driver: `qualisys_cpp_sdk` targets not found. Attempting to fetch contents...
+[13.566s] -- Found ament_lint_auto: 0.12.14 (/opt/ros/humble/share/ament_lint_auto/cmake)
+[13.765s] -- Added test 'copyright' to check source files copyright and LICENSE
+[13.768s] -- Added test 'cppcheck' to perform static code analysis on C / C++ code
+[13.769s] -- Configured cppcheck include dirs: /home/user/Projects/svea_charging/src/mocap4ros2_qualisys/qualisys_driver/include
+[13.769s] -- Configured cppcheck exclude dirs and/or files: 
+[13.772s] -- Added test 'cpplint' to check C / C++ code against the Google style
+[13.772s] -- Configured cpplint exclude dirs and/or files: 
+[13.773s] -- Added test 'flake8' to check Python code syntax and style conventions
+[13.774s] -- Added test 'lint_cmake' to check CMake code style
+[13.775s] -- Added test 'pep257' to check Python code against some of the docstring style conventions in PEP 257
+[13.778s] -- Added test 'uncrustify' to check C / C++ code style
+[13.778s] -- Configured uncrustify additional arguments: 
+[13.779s] -- Added test 'xmllint' to check XML markup files
+[13.791s] -- Configuring done
+[13.833s] -- Generating done
+[13.849s] -- Build files have been written to: /home/user/Projects/svea_charging/build/qualisys_driver
+[13.882s] Invoked command in '/home/user/Projects/svea_charging/build/qualisys_driver' returned '0': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake /home/user/Projects/svea_charging/src/mocap4ros2_qualisys/qualisys_driver -DAMENT_CMAKE_SYMLINK_INSTALL=1 -DCMAKE_INSTALL_PREFIX=/home/user/Projects/svea_charging/install/qualisys_driver
+[13.883s] Invoking command in '/home/user/Projects/svea_charging/build/qualisys_driver': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake --build /home/user/Projects/svea_charging/build/qualisys_driver -- -j4 -l4
+[13.978s] [ 11%] Building CXX object _deps/qualisys_cpp_sdk-build/CMakeFiles/qualisys_cpp_sdk.dir/Markup.cpp.o
+[14.359s] In file included from /home/user/Projects/svea_charging/build/qualisys_driver/_deps/qualisys_cpp_sdk-src/Markup.cpp:18:
+[14.359s] /home/user/Projects/svea_charging/build/qualisys_driver/_deps/qualisys_cpp_sdk-src/Markup.h: In copy constructor ‘CMarkup::ElemPos::ElemPos(const CMarkup::ElemPos&)’:
+[14.359s] /home/user/Projects/svea_charging/build/qualisys_driver/_deps/qualisys_cpp_sdk-src/Markup.h:89:55: warning: implicitly-declared ‘constexpr CMarkup::ElemPos& CMarkup::ElemPos::operator=(const CMarkup::ElemPos&)’ is deprecated [-Wdeprecated-copy]
+[14.360s]    89 |                 ElemPos(const ElemPos& pos) { *this = pos; };
+[14.360s]       |                                                       ^~~
+[14.360s] /home/user/Projects/svea_charging/build/qualisys_driver/_deps/qualisys_cpp_sdk-src/Markup.h:89:17: note: because ‘CMarkup::ElemPos’ has user-provided ‘CMarkup::ElemPos::ElemPos(const CMarkup::ElemPos&)’
+[14.360s]    89 |                 ElemPos(const ElemPos& pos) { *this = pos; };
+[14.360s]       |                 ^~~~~~~
+[14.893s] [ 22%] Building CXX object _deps/qualisys_cpp_sdk-build/CMakeFiles/qualisys_cpp_sdk.dir/RTProtocol.cpp.o
+[15.871s] In file included from /home/user/Projects/svea_charging/build/qualisys_driver/_deps/qualisys_cpp_sdk-src/RTProtocol.cpp:17:
+[15.871s] /home/user/Projects/svea_charging/build/qualisys_driver/_deps/qualisys_cpp_sdk-src/Markup.h: In copy constructor ‘CMarkup::ElemPos::ElemPos(const CMarkup::ElemPos&)’:
+[15.871s] /home/user/Projects/svea_charging/build/qualisys_driver/_deps/qualisys_cpp_sdk-src/Markup.h:89:55: warning: implicitly-declared ‘constexpr CMarkup::ElemPos& CMarkup::ElemPos::operator=(const CMarkup::ElemPos&)’ is deprecated [-Wdeprecated-copy]
+[15.871s]    89 |                 ElemPos(const ElemPos& pos) { *this = pos; };
+[15.871s]       |                                                       ^~~
+[15.872s] /home/user/Projects/svea_charging/build/qualisys_driver/_deps/qualisys_cpp_sdk-src/Markup.h:89:17: note: because ‘CMarkup::ElemPos’ has user-provided ‘CMarkup::ElemPos::ElemPos(const CMarkup::ElemPos&)’
+[15.872s]    89 |                 ElemPos(const ElemPos& pos) { *this = pos; };
+[15.872s]       |                 ^~~~~~~
+[16.981s] /home/user/Projects/svea_charging/build/qualisys_driver/_deps/qualisys_cpp_sdk-src/RTProtocol.cpp: In member function ‘bool CRTProtocol::GetCapture(const char*, bool)’:
+[16.982s] /home/user/Projects/svea_charging/build/qualisys_driver/_deps/qualisys_cpp_sdk-src/RTProtocol.cpp:651:66: warning: ‘%s’ directive writing up to 1023 bytes into a region of size 1004 [-Wformat-overflow=]
+[16.982s]   651 |                         sprintf(maErrorStr, "No packet received. %s.", maErrorStr);
+[16.982s]       |                                                                  ^~
+[16.982s] /home/user/Projects/svea_charging/build/qualisys_driver/_deps/qualisys_cpp_sdk-src/RTProtocol.cpp:651:32: note: ‘sprintf’ output between 22 and 1045 bytes into a destination of size 1024
+[16.982s]   651 |                         sprintf(maErrorStr, "No packet received. %s.", maErrorStr);
+[16.982s]       |                         ~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+[17.028s] /home/user/Projects/svea_charging/build/qualisys_driver/_deps/qualisys_cpp_sdk-src/RTProtocol.cpp:651:32: warning: ‘sprintf’ argument 3 overlaps destination object ‘this’ [-Wrestrict]
+[17.028s] /home/user/Projects/svea_charging/build/qualisys_driver/_deps/qualisys_cpp_sdk-src/RTProtocol.cpp:580:62: note: destination object referenced by ‘restrict’-qualified argument 1 was declared here
+[17.028s]   580 | bool CRTProtocol::GetCapture(const char* pFileName, bool bC3D)
+[17.028s]       |                                                              ^
+[21.079s] [ 33%] Building CXX object _deps/qualisys_cpp_sdk-build/CMakeFiles/qualisys_cpp_sdk.dir/RTPacket.cpp.o
+[21.740s] [ 44%] Building CXX object _deps/qualisys_cpp_sdk-build/CMakeFiles/qualisys_cpp_sdk.dir/Network.cpp.o
+[22.432s] [ 55%] Linking CXX static library libqualisys_cpp_sdk.a
+[22.584s] [ 55%] Built target qualisys_cpp_sdk
+[22.633s] [ 66%] Building CXX object CMakeFiles/qualisys_driver.dir/src/qualisys_driver.cpp.o
+[29.579s] /home/user/Projects/svea_charging/src/mocap4ros2_qualisys/qualisys_driver/src/qualisys_driver.cpp: In member function ‘void QualisysDriver::loop()’:
+[29.580s] /home/user/Projects/svea_charging/src/mocap4ros2_qualisys/qualisys_driver/src/qualisys_driver.cpp:83:37: warning: ‘int CRTProtocol::ReceiveRTPacket(CRTPacket::EPacketType&, bool, int)’ is deprecated: Replaced by Receive. [-Wdeprecated-declarations]
+[29.580s]    83 |   if (port_protocol_.ReceiveRTPacket(e_type, true)) {
+[29.580s]       |       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~
+[29.580s] In file included from /home/user/Projects/svea_charging/src/mocap4ros2_qualisys/qualisys_driver/include/qualisys_driver/qualisys_driver.hpp:53,
+[29.580s]                  from /home/user/Projects/svea_charging/src/mocap4ros2_qualisys/qualisys_driver/src/qualisys_driver.cpp:27:
+[29.580s] /home/user/Projects/svea_charging/build/qualisys_driver/_deps/qualisys_cpp_sdk-src/RTProtocol.h:718:17: note: declared here
+[29.581s]   718 |     int         ReceiveRTPacket(CRTPacket::EPacketType &eType, bool bSkipEvents = true, int nTimeout = cWaitForDataTimeout); // nTimeout < 0 : Blocking receive
+[29.581s]       |                 ^~~~~~~~~~~~~~~
+[40.941s] [ 77%] Linking CXX static library libqualisys_driver.a
+[41.314s] [ 77%] Built target qualisys_driver
+[41.406s] [ 88%] Building CXX object CMakeFiles/qualisys_driver_main.dir/src/qualisys_driver_main.cpp.o
+[50.893s] [100%] Linking CXX executable qualisys_driver_main
+[52.491s] [100%] Built target qualisys_driver_main
+[52.541s] Invoked command in '/home/user/Projects/svea_charging/build/qualisys_driver' returned '0': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake --build /home/user/Projects/svea_charging/build/qualisys_driver -- -j4 -l4
+[52.576s] Invoking command in '/home/user/Projects/svea_charging/build/qualisys_driver': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake --install /home/user/Projects/svea_charging/build/qualisys_driver
+[52.594s] -- Install configuration: ""
+[52.596s] -- Execute custom install script
+[52.602s] -- Symlinking: /home/user/Projects/svea_charging/install/qualisys_driver/include//qualisys_driver/qualisys_driver.hpp
+[52.626s] -- Symlinking: /home/user/Projects/svea_charging/install/qualisys_driver/share/qualisys_driver/launch/__pycache__/qualisys.launch.cpython-310.pyc
+[52.649s] -- Symlinking: /home/user/Projects/svea_charging/install/qualisys_driver/share/qualisys_driver/launch/qualisys.launch.py
+[52.679s] -- Symlinking: /home/user/Projects/svea_charging/install/qualisys_driver/share/qualisys_driver/config/qualisys_driver_params.yaml
+[52.700s] -- Symlinking: /home/user/Projects/svea_charging/install/qualisys_driver/lib/libqualisys_driver.a
+[52.722s] -- Symlinking: /home/user/Projects/svea_charging/install/qualisys_driver/lib/qualisys_driver/qualisys_driver_main
+[52.747s] -- Symlinking: /home/user/Projects/svea_charging/install/qualisys_driver/share/qualisys_driver/environment/library_path.sh
+[52.768s] -- Symlinking: /home/user/Projects/svea_charging/install/qualisys_driver/share/qualisys_driver/environment/library_path.dsv
+[52.791s] -- Symlinking: /home/user/Projects/svea_charging/install/qualisys_driver/share/ament_index/resource_index/package_run_dependencies/qualisys_driver
+[52.810s] -- Symlinking: /home/user/Projects/svea_charging/install/qualisys_driver/share/ament_index/resource_index/parent_prefix_path/qualisys_driver
+[52.833s] -- Symlinking: /home/user/Projects/svea_charging/install/qualisys_driver/share/qualisys_driver/environment/ament_prefix_path.sh
+[52.852s] -- Symlinking: /home/user/Projects/svea_charging/install/qualisys_driver/share/qualisys_driver/environment/ament_prefix_path.dsv
+[52.878s] -- Symlinking: /home/user/Projects/svea_charging/install/qualisys_driver/share/qualisys_driver/environment/path.sh
+[52.897s] -- Symlinking: /home/user/Projects/svea_charging/install/qualisys_driver/share/qualisys_driver/environment/path.dsv
+[52.923s] -- Symlinking: /home/user/Projects/svea_charging/install/qualisys_driver/share/qualisys_driver/local_setup.bash
+[52.950s] -- Symlinking: /home/user/Projects/svea_charging/install/qualisys_driver/share/qualisys_driver/local_setup.sh
+[52.986s] -- Symlinking: /home/user/Projects/svea_charging/install/qualisys_driver/share/qualisys_driver/local_setup.zsh
+[53.008s] -- Symlinking: /home/user/Projects/svea_charging/install/qualisys_driver/share/qualisys_driver/local_setup.dsv
+[53.044s] -- Symlinking: /home/user/Projects/svea_charging/install/qualisys_driver/share/qualisys_driver/package.dsv
+[53.080s] -- Symlinking: /home/user/Projects/svea_charging/install/qualisys_driver/share/ament_index/resource_index/packages/qualisys_driver
+[53.107s] -- Symlinking: /home/user/Projects/svea_charging/install/qualisys_driver/share/qualisys_driver/cmake/ament_cmake_export_include_directories-extras.cmake
+[53.130s] -- Symlinking: /home/user/Projects/svea_charging/install/qualisys_driver/share/qualisys_driver/cmake/ament_cmake_export_libraries-extras.cmake
+[53.157s] -- Symlinking: /home/user/Projects/svea_charging/install/qualisys_driver/share/qualisys_driver/cmake/ament_cmake_export_dependencies-extras.cmake
+[53.182s] -- Symlinking: /home/user/Projects/svea_charging/install/qualisys_driver/share/qualisys_driver/cmake/qualisys_driverConfig.cmake
+[53.206s] -- Symlinking: /home/user/Projects/svea_charging/install/qualisys_driver/share/qualisys_driver/cmake/qualisys_driverConfig-version.cmake
+[53.233s] -- Symlinking: /home/user/Projects/svea_charging/install/qualisys_driver/share/qualisys_driver/package.xml
+[53.261s] -- Installing: /home/user/Projects/svea_charging/install/qualisys_driver/lib/libqualisys_cpp_sdk.a
+[53.288s] -- Installing: /home/user/Projects/svea_charging/install/qualisys_driver/include/qualisys_cpp_sdk/Markup.h
+[53.288s] -- Installing: /home/user/Projects/svea_charging/install/qualisys_driver/include/qualisys_cpp_sdk/Network.h
+[53.289s] -- Installing: /home/user/Projects/svea_charging/install/qualisys_driver/include/qualisys_cpp_sdk/RTPacket.h
+[53.289s] -- Installing: /home/user/Projects/svea_charging/install/qualisys_driver/include/qualisys_cpp_sdk/RTProtocol.h
+[53.289s] Invoked command in '/home/user/Projects/svea_charging/build/qualisys_driver' returned '0': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake --install /home/user/Projects/svea_charging/build/qualisys_driver

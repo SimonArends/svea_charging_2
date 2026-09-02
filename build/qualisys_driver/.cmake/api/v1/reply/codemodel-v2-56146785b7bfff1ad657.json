@@ -1,0 +1,131 @@
+{
+	"configurations" : 
+	[
+		{
+			"directories" : 
+			[
+				{
+					"build" : ".",
+					"childIndexes" : 
+					[
+						1
+					],
+					"hasInstallRule" : true,
+					"jsonFile" : "directory-.-d63146a520abd81c4f44.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.12"
+					},
+					"projectIndex" : 0,
+					"source" : ".",
+					"targetIndexes" : 
+					[
+						1,
+						2,
+						3,
+						4
+					]
+				},
+				{
+					"build" : "_deps/qualisys_cpp_sdk-build",
+					"hasInstallRule" : true,
+					"jsonFile" : "directory-_deps.qualisys_cpp_sdk-build-1503f575d8e86c9d1785.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.5"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 1,
+					"source" : "/home/user/Projects/svea_charging/build/qualisys_driver/_deps/qualisys_cpp_sdk-src",
+					"targetIndexes" : 
+					[
+						0
+					]
+				}
+			],
+			"name" : "",
+			"projects" : 
+			[
+				{
+					"childIndexes" : 
+					[
+						1
+					],
+					"directoryIndexes" : 
+					[
+						0
+					],
+					"name" : "qualisys_driver",
+					"targetIndexes" : 
+					[
+						1,
+						2,
+						3,
+						4
+					]
+				},
+				{
+					"directoryIndexes" : 
+					[
+						1
+					],
+					"name" : "qualisys_cpp_sdk",
+					"parentIndex" : 0,
+					"targetIndexes" : 
+					[
+						0
+					]
+				}
+			],
+			"targets" : 
+			[
+				{
+					"directoryIndex" : 1,
+					"id" : "qualisys_cpp_sdk::@969331a7fef92f103aa8",
+					"jsonFile" : "target-qualisys_cpp_sdk-64a935a53b0b10e67bb0.json",
+					"name" : "qualisys_cpp_sdk",
+					"projectIndex" : 1
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "qualisys_driver::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-qualisys_driver-0705890553e50166ae8d.json",
+					"name" : "qualisys_driver",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "qualisys_driver_main::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-qualisys_driver_main-32f25754018eea653218.json",
+					"name" : "qualisys_driver_main",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "qualisys_driver_uninstall::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-qualisys_driver_uninstall-661c4f3e231f365969d2.json",
+					"name" : "qualisys_driver_uninstall",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "uninstall::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-uninstall-8b7f38709e79f066a19b.json",
+					"name" : "uninstall",
+					"projectIndex" : 0
+				}
+			]
+		}
+	],
+	"kind" : "codemodel",
+	"paths" : 
+	{
+		"build" : "/home/user/Projects/svea_charging/build/qualisys_driver",
+		"source" : "/home/user/Projects/svea_charging/src/mocap4ros2_qualisys/qualisys_driver"
+	},
+	"version" : 
+	{
+		"major" : 2,
+		"minor" : 3
+	}
+}

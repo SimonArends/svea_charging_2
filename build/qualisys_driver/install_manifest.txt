@@ -1,0 +1,5 @@
+/home/user/Projects/svea_charging/install/qualisys_driver/lib/libqualisys_cpp_sdk.a
+/home/user/Projects/svea_charging/install/qualisys_driver/include/qualisys_cpp_sdk/Markup.h
+/home/user/Projects/svea_charging/install/qualisys_driver/include/qualisys_cpp_sdk/Network.h
+/home/user/Projects/svea_charging/install/qualisys_driver/include/qualisys_cpp_sdk/RTPacket.h
+/home/user/Projects/svea_charging/install/qualisys_driver/include/qualisys_cpp_sdk/RTProtocol.h

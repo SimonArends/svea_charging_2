@@ -1,0 +1,36 @@
+In file included from /home/user/Projects/svea_charging/build/qualisys_driver/_deps/qualisys_cpp_sdk-src/Markup.cpp:18:
+/home/user/Projects/svea_charging/build/qualisys_driver/_deps/qualisys_cpp_sdk-src/Markup.h: In copy constructor ‘CMarkup::ElemPos::ElemPos(const CMarkup::ElemPos&)’:
+/home/user/Projects/svea_charging/build/qualisys_driver/_deps/qualisys_cpp_sdk-src/Markup.h:89:55: warning: implicitly-declared ‘constexpr CMarkup::ElemPos& CMarkup::ElemPos::operator=(const CMarkup::ElemPos&)’ is deprecated [-Wdeprecated-copy]
+   89 |                 ElemPos(const ElemPos& pos) { *this = pos; };
+      |                                                       ^~~
+/home/user/Projects/svea_charging/build/qualisys_driver/_deps/qualisys_cpp_sdk-src/Markup.h:89:17: note: because ‘CMarkup::ElemPos’ has user-provided ‘CMarkup::ElemPos::ElemPos(const CMarkup::ElemPos&)’
+   89 |                 ElemPos(const ElemPos& pos) { *this = pos; };
+      |                 ^~~~~~~
+In file included from /home/user/Projects/svea_charging/build/qualisys_driver/_deps/qualisys_cpp_sdk-src/RTProtocol.cpp:17:
+/home/user/Projects/svea_charging/build/qualisys_driver/_deps/qualisys_cpp_sdk-src/Markup.h: In copy constructor ‘CMarkup::ElemPos::ElemPos(const CMarkup::ElemPos&)’:
+/home/user/Projects/svea_charging/build/qualisys_driver/_deps/qualisys_cpp_sdk-src/Markup.h:89:55: warning: implicitly-declared ‘constexpr CMarkup::ElemPos& CMarkup::ElemPos::operator=(const CMarkup::ElemPos&)’ is deprecated [-Wdeprecated-copy]
+   89 |                 ElemPos(const ElemPos& pos) { *this = pos; };
+      |                                                       ^~~
+/home/user/Projects/svea_charging/build/qualisys_driver/_deps/qualisys_cpp_sdk-src/Markup.h:89:17: note: because ‘CMarkup::ElemPos’ has user-provided ‘CMarkup::ElemPos::ElemPos(const CMarkup::ElemPos&)’
+   89 |                 ElemPos(const ElemPos& pos) { *this = pos; };
+      |                 ^~~~~~~
+/home/user/Projects/svea_charging/build/qualisys_driver/_deps/qualisys_cpp_sdk-src/RTProtocol.cpp: In member function ‘bool CRTProtocol::GetCapture(const char*, bool)’:
+/home/user/Projects/svea_charging/build/qualisys_driver/_deps/qualisys_cpp_sdk-src/RTProtocol.cpp:651:66: warning: ‘%s’ directive writing up to 1023 bytes into a region of size 1004 [-Wformat-overflow=]
+  651 |                         sprintf(maErrorStr, "No packet received. %s.", maErrorStr);
+      |                                                                  ^~
+/home/user/Projects/svea_charging/build/qualisys_driver/_deps/qualisys_cpp_sdk-src/RTProtocol.cpp:651:32: note: ‘sprintf’ output between 22 and 1045 bytes into a destination of size 1024
+  651 |                         sprintf(maErrorStr, "No packet received. %s.", maErrorStr);
+      |                         ~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/user/Projects/svea_charging/build/qualisys_driver/_deps/qualisys_cpp_sdk-src/RTProtocol.cpp:651:32: warning: ‘sprintf’ argument 3 overlaps destination object ‘this’ [-Wrestrict]
+/home/user/Projects/svea_charging/build/qualisys_driver/_deps/qualisys_cpp_sdk-src/RTProtocol.cpp:580:62: note: destination object referenced by ‘restrict’-qualified argument 1 was declared here
+  580 | bool CRTProtocol::GetCapture(const char* pFileName, bool bC3D)
+      |                                                              ^
+/home/user/Projects/svea_charging/src/mocap4ros2_qualisys/qualisys_driver/src/qualisys_driver.cpp: In member function ‘void QualisysDriver::loop()’:
+/home/user/Projects/svea_charging/src/mocap4ros2_qualisys/qualisys_driver/src/qualisys_driver.cpp:83:37: warning: ‘int CRTProtocol::ReceiveRTPacket(CRTPacket::EPacketType&, bool, int)’ is deprecated: Replaced by Receive. [-Wdeprecated-declarations]
+   83 |   if (port_protocol_.ReceiveRTPacket(e_type, true)) {
+      |       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~
+In file included from /home/user/Projects/svea_charging/src/mocap4ros2_qualisys/qualisys_driver/include/qualisys_driver/qualisys_driver.hpp:53,
+                 from /home/user/Projects/svea_charging/src/mocap4ros2_qualisys/qualisys_driver/src/qualisys_driver.cpp:27:
+/home/user/Projects/svea_charging/build/qualisys_driver/_deps/qualisys_cpp_sdk-src/RTProtocol.h:718:17: note: declared here
+  718 |     int         ReceiveRTPacket(CRTPacket::EPacketType &eType, bool bSkipEvents = true, int nTimeout = cWaitForDataTimeout); // nTimeout < 0 : Blocking receive
+      |                 ^~~~~~~~~~~~~~~
