@@ -1,0 +1,46 @@
+/**:
+  ros__parameters:
+    # Fixed [x, y] coordinates from /self/odometry/global, in metres.
+    # Straight segment rectified to 1m spacing exactly on the line between
+    # the trusted start point and [51.4989, -19.5556] (the manually-recorded
+    # points there weren't perfectly collinear, up to ~0.21m off-line, which
+    # made the fitted spline squiggly). From there: a circular fillet arc
+    # (R=3.5m, matching the ~82 deg turn measured between the incoming
+    # heading and the line to the registered goal point) blends into a
+    # straight line (1m spacing) to the goal. Both the turn point
+    # ([55.7878, -21.5835]) and the goal point ([51.2689, -34.9169]) were
+    # registered as single-shot /self/odometry/global reads with the car
+    # stationary and RTK fixed (low covariance confirmed for both).
+    map_waypoints: "[[0.4685, -0.1614], [1.4033, -0.5167], [2.338, -0.8719], [3.2728, -1.2272], [4.2076, -1.5824], [5.1423, -1.9377], [6.0771, -2.293], [7.0119, -2.6482], [7.9466, -3.0035], [8.8814, -3.3587], [9.8162, -3.714], [10.7509, -4.0693], [11.6857, -4.4245], [12.6205, -4.7798], [13.5552, -5.135], [14.49, -5.4903], [15.4248, -5.8456], [16.3595, -6.2008], [17.2943, -6.5561], [18.2291, -6.9113], [19.1638, -7.2666], [20.0986, -7.6219], [21.0334, -7.9771], [21.9682, -8.3324], [22.9029, -8.6876], [23.8377, -9.0429], [24.7725, -9.3982], [25.7072, -9.7534], [26.642, -10.1087], [27.5768, -10.4639], [28.5115, -10.8192], [29.4463, -11.1745], [30.3811, -11.5297], [31.3158, -11.885], [32.2506, -12.2402], [33.1854, -12.5955], [34.1201, -12.9508], [35.0549, -13.306], [35.9897, -13.6613], [36.9244, -14.0165], [37.8592, -14.3718], [38.794, -14.7271], [39.7287, -15.0823], [40.6635, -15.4376], [41.5983, -15.7928], [42.533, -16.1481], [43.4678, -16.5034], [44.4026, -16.8586], [45.3373, -17.2139], [46.2721, -17.5691], [47.2069, -17.9244], [48.1416, -18.2797], [49.0764, -18.6349], [50.0112, -18.9902], [50.9459, -19.3454], [51.4989, -19.5556], [53.0634, -20.2177], [53.4941, -20.4737], [53.8838, -20.7886], [54.2246, -21.156], [54.5094, -21.5682], [54.7324, -22.0169], [54.8891, -22.4929], [54.9762, -22.9863], [54.9919, -23.4871], [54.936, -23.985], [54.8095, -24.4699], [54.4886, -25.417], [54.1676, -26.3641], [53.8466, -27.3111], [53.5256, -28.2582], [53.2046, -29.2053], [52.8837, -30.1524], [52.5627, -31.0995], [52.2417, -32.0466], [51.9207, -32.9937], [51.5997, -33.9407], [51.2788, -34.8878], [51.2689, -34.9169]]"
+
+    target_velocity: 0.20
+    turn_velocity: 0.12
+    goal_tolerance: 0.75
+
+    # The first waypoint and first route segment define the required start.
+    start_tolerance: 1.50
+    start_heading_tolerance: 0.50
+
+    # Stop if the vehicle center is farther than this from the spline.
+    corridor_width: 1.50
+
+    # Slow down when upcoming spline curvature reaches this value [1/m].
+    turn_curvature_threshold: 0.50
+
+    # Reject a generated route containing a tighter bend than this radius [m].
+    minimum_turning_radius: 0.40
+
+    odometry_timeout_s: 0.30
+    gps_timeout_s: 2.50
+    rtk_timeout_s: 2.50
+    require_rtk_fixed: true
+    rtk_fixed_settle_s: 10.0
+    max_horizontal_accuracy: 0.50
+    localization_settle_s: 10.0
+    max_settle_position_spread: 0.20
+
+    # Outdoor EKF is GPS/encoder-only, so use RTK position deltas as heading
+    # for Stanley instead of trusting odometry yaw.
+    use_course_heading: true
+    course_heading_min_distance: 0.50
+    course_heading_alpha: 0.20

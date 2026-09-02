@@ -1,0 +1,9 @@
+datum:
+  # RTK-fixed start reference measured 2026-07-24.
+  latitude: 59.3505971
+  longitude: 18.0680490
+
+  # Keep the true-north heading used while the route was recorded. Changing
+  # this later would rotate the map frame and invalidate its waypoints.
+  # Bearing 304 deg converts to ROS ENU yaw 146 deg.
+  yaw: 2.548181
