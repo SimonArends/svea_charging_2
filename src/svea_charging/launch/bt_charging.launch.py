@@ -1,0 +1,134 @@
+#!/usr/bin/env python3
+from better_launch import BetterLaunch, launch_this
+
+
+@launch_this
+def main(
+    name: str = "self",
+    map_pkg: str = "svea_core",
+    map_name: str = "sml",
+    is_sim: bool = False,
+    use_mocap: bool = True,
+    mocap_svea_pose_topic: str = "/svea3/pose",
+    mocap_charging_station_pose_topic: str = "/mocap/charging_station/pose",
+    use_foxglove: bool = True,
+    initial_pose_x: float = -2.5,
+    initial_pose_y: float = 0.0,
+    initial_pose_a: float = 0.0,
+    use_aruco_camera: bool = True,
+    camera_image_topic: str = "image_raw",
+    camera_frame_id: str = "{name}/camera",
+    aruco_dictionary: str = "DICT_4X4_50",
+    aruco_marker_length_m: float = 0.365,
+    aruco_display: bool = False,
+    aruco_loop_hz: float = 30.0,
+    aruco_frame_id: str = "{name}/camera",
+    aruco_use_aruco_detector_api: bool = False,
+    aruco_publish_debug_image: bool = True,
+    aruco_jpeg_quality: int = 80,
+    aruco_generate_marker_on_startup: bool = False,
+    aruco_marker_id: int = 13,
+    aruco_marker_size_px: int = 400,
+    aruco_output: str = "aruco_marker.png",
+    aruco_calibration_file: str = "",
+    aruco_focal_length_px: float = -1.0,
+    bt_switch_distance_m: float = 3.15,
+    bt_dock_distance_m: float = 1.63,
+):
+    bl = BetterLaunch()
+
+    camera_frame_id = camera_frame_id.format(name=name)
+    aruco_frame_id = aruco_frame_id.format(name=name)
+    if not aruco_calibration_file:
+        aruco_calibration_file = bl.find("svea_charging", "params/camera.yaml")
+
+
+    bl.include("svea_core", "svea.launch.py",
+               name=name,
+               is_sim=is_sim,
+               map_pkg=map_pkg,
+               map_name=map_name,
+               initial_pose_x=initial_pose_x,
+               initial_pose_y=initial_pose_y,
+               initial_pose_a=initial_pose_a,
+               use_foxglove=use_foxglove,)
+
+    with bl.group(name):
+        if not is_sim:
+            bl.node("usb_cam", "usb_cam_node_exe",
+                    name="usb_cam_node",
+                    params=dict(
+                        video_device="/dev/video0",
+                        camera_name="narrow_stereo",
+                        frame_id=camera_frame_id,
+                        pixel_format="mjpeg2rgb",
+                        image_width=640,
+                        image_height=480,
+                        framerate=30.0,
+                        camera_info_url=f"file://{aruco_calibration_file}",
+                        brightness=130,
+                        gain=10,
+                        auto_white_balance=False,
+                        white_balance=4000,
+                        autoexposure=False,
+                        exposure=700,
+                        autofocus=True,
+                        focus=-1,
+                    ),
+                    remaps={
+                        "/image_raw": camera_image_topic,
+                        "/camera_info": "camera/camera_info",
+                    })
+
+        if use_aruco_camera:
+            bl.node("svea_charging", "aruco_camera_test.py",
+                    name="aruco_camera_test",
+                    params=dict(
+                        dictionary=aruco_dictionary,
+                        marker_length_m=aruco_marker_length_m,
+                        display=aruco_display,
+                        loop_hz=aruco_loop_hz,
+                        frame_id=aruco_frame_id,
+                        use_aruco_detector_api=aruco_use_aruco_detector_api,
+                        publish_debug_image=aruco_publish_debug_image,
+                        jpeg_quality=aruco_jpeg_quality,
+                        generate_marker_on_startup=aruco_generate_marker_on_startup,
+                        marker_id=aruco_marker_id,
+                        marker_size_px=aruco_marker_size_px,
+                        output=aruco_output,
+                        calibration_file=aruco_calibration_file,
+                        focal_length_px=aruco_focal_length_px,
+                        image_topic=camera_image_topic,
+                    ))
+
+        bl.node("svea_charging", "stanleyExecutable.py",
+                name="stanleyExecutable",
+                params=dict(
+                    use_rviz=use_foxglove,
+                    is_sim=is_sim,
+                    use_mocap=use_mocap,
+                    mocap_svea_pose_topic=mocap_svea_pose_topic,
+                    mocap_charging_station_pose_topic=mocap_charging_station_pose_topic,
+                    **{"localization/base_frame": f"{name}/base_link"},
+                ))
+
+        bl.node("svea_charging", "line_follower.py",
+                name="line_follower",
+                params=dict(
+                    use_rviz=use_foxglove,
+                    is_sim=is_sim,
+                    image_topic=camera_image_topic,
+                ))
+
+        bl.node("svea_charging", "bt_runner.py",
+                name="bt_runner",
+                params=dict(
+                    switch_distance_m=bt_switch_distance_m,
+                    dock_distance_m=bt_dock_distance_m,
+                ))
+
+        bl.node("svea_charging", "control_mux.py",
+                name="control_mux",
+                params=dict(
+                    is_sim=is_sim,
+                ))
