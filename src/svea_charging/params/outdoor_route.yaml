@@ -1,0 +1,25 @@
+/**:
+  ros__parameters:
+    # Fixed [x, y] coordinates from /self/odometry/global, in metres.
+    # Replace these example points after recording the desired route outdoors.
+    map_waypoints: "[[0.0, 0.0], [5.0, 0.0], [10.0, 0.0], [20.0, 0.0], [30.0, 0.0], [40.0, 0.0], [50.0, 0.0]]"
+
+    target_velocity: 0.20
+    turn_velocity: 0.12
+    goal_tolerance: 0.75
+
+    # The first waypoint and first route segment define the required start.
+    start_tolerance: 1.50
+    start_heading_tolerance: 0.50
+
+    # Stop if the vehicle center is farther than this from the spline.
+    corridor_width: 1.50
+
+    # Slow down when upcoming spline curvature reaches this value [1/m].
+    turn_curvature_threshold: 0.50
+
+    # Reject a generated route containing a tighter bend than this radius [m].
+    minimum_turning_radius: 0.40
+
+    odometry_timeout_s: 0.30
+    gps_timeout_s: 2.50
