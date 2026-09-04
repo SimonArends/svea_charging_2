@@ -34,6 +34,7 @@ class control_mux(rx.Node):
     controller_timeout_s = rx.Parameter(0.3)
     output_hz = rx.Parameter(20.0)
     active_controller = rx.Parameter("idle")
+    invert_velocity = rx.Parameter(False)
     charging_arm_topic = rx.Parameter("/charging_arm")
     charging_arm_active_xtr1 = rx.Parameter(100.0)
     charging_arm_inactive_xtr1 = rx.Parameter(0.0)
@@ -84,7 +85,8 @@ class control_mux(rx.Node):
             else float(self.charging_arm_inactive_xtr1)
         )
         self.actuation.send_xtr(xtr1=xtr1)
-        self.actuation.send_control(cmd.steering, -1*cmd.velocity)
+        velocity = -cmd.velocity if bool(self.invert_velocity) else cmd.velocity
+        self.actuation.send_control(cmd.steering, velocity)
 
     def _get_selected_command(self) -> ControllerCommand:
         active = str(self.active_controller)

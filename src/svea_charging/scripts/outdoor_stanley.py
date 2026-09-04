@@ -26,7 +26,7 @@ from svea_core import rosonic as rx
 class OutdoorStanley(rx.Node):
     update_hz = rx.Parameter(20.0)
     enabled = rx.Parameter(False)
-    target_velocity = rx.Parameter(0.20)
+    target_velocity = rx.Parameter(0.28)
     turn_velocity = rx.Parameter(0.12)
     max_steering_rad = rx.Parameter(0.45)
     goal_tolerance = rx.Parameter(0.75)
@@ -36,9 +36,10 @@ class OutdoorStanley(rx.Node):
     turn_curvature_threshold = rx.Parameter(0.50)
     minimum_turning_radius = rx.Parameter(0.40)
     odometry_timeout_s = rx.Parameter(0.30)
+    use_gps = rx.Parameter(False)
     gps_timeout_s = rx.Parameter(2.50)
     rtk_timeout_s = rx.Parameter(2.50)
-    require_rtk_fixed = rx.Parameter(True)
+    require_rtk_fixed = rx.Parameter(False)
     rtk_fixed_settle_s = rx.Parameter(10.0)
     max_horizontal_accuracy = rx.Parameter(0.50)
     localization_settle_s = rx.Parameter(10.0)
@@ -54,7 +55,7 @@ class OutdoorStanley(rx.Node):
         "[[0.0, 0.0], [5.0, 0.0], [10.0, 0.0], [20.0, 0.0], "
         "[30.0, 0.0], [40.0, 0.0], [50.0, 0.0]]"
     )
-    odometry_topic = rx.Parameter("odometry/global")
+    odometry_topic = rx.Parameter("odometry/local")
     gps_topic = rx.Parameter("gps/fix")
     carrier_solution_topic = rx.Parameter("gps/carrier_solution")
     horizontal_accuracy_topic = rx.Parameter("gps/horizontal_accuracy")
@@ -152,7 +153,7 @@ class OutdoorStanley(rx.Node):
         self.create_timer(period, self.loop)
         self.get_logger().warn(
             "Outdoor Stanley is inactive" if not self.was_enabled
-            else "Outdoor Stanley is active; waiting for fresh GPS and global odometry"
+            else "Outdoor Stanley is active; waiting for fresh odometry"
         )
 
     @staticmethod
@@ -238,25 +239,26 @@ class OutdoorStanley(rx.Node):
         now = self._now_s()
         if self.last_odom_s is None or now - self.last_odom_s > float(self.odometry_timeout_s):
             return "global odometry stale"
-        if self.last_gps_s is None or now - self.last_gps_s > float(self.gps_timeout_s):
-            return "GPS fix stale or unavailable"
-        if bool(self.require_rtk_fixed):
-            if self.last_rtk_s is None or now - self.last_rtk_s > float(self.rtk_timeout_s):
-                return "RTK status stale or unavailable"
-            if self.carrier_solution != 2:
-                return f"RTK is not fixed (carrSoln={self.carrier_solution})"
-            if (
-                self.rtk_fixed_since is None
-                or now - self.rtk_fixed_since < float(self.rtk_fixed_settle_s)
-            ):
-                return "waiting for RTK fixed to stabilize"
-        if self.last_accuracy_s is None or now - self.last_accuracy_s > float(self.gps_timeout_s):
-            return "GPS horizontal accuracy stale or unavailable"
-        if self.horizontal_accuracy > float(self.max_horizontal_accuracy):
-            return (
-                f"GPS horizontal accuracy too poor "
-                f"({self.horizontal_accuracy:.2f} m)"
-            )
+        if bool(self.use_gps):
+            if self.last_gps_s is None or now - self.last_gps_s > float(self.gps_timeout_s):
+                return "GPS fix stale or unavailable"
+            if bool(self.require_rtk_fixed):
+                if self.last_rtk_s is None or now - self.last_rtk_s > float(self.rtk_timeout_s):
+                    return "RTK status stale or unavailable"
+                if self.carrier_solution != 2:
+                    return f"RTK is not fixed (carrSoln={self.carrier_solution})"
+                if (
+                    self.rtk_fixed_since is None
+                    or now - self.rtk_fixed_since < float(self.rtk_fixed_settle_s)
+                ):
+                    return "waiting for RTK fixed to stabilize"
+            if self.last_accuracy_s is None or now - self.last_accuracy_s > float(self.gps_timeout_s):
+                return "GPS horizontal accuracy stale or unavailable"
+            if self.horizontal_accuracy > float(self.max_horizontal_accuracy):
+                return (
+                    f"GPS horizontal accuracy too poor "
+                    f"({self.horizontal_accuracy:.2f} m)"
+                )
         if self.route_error is not None:
             return self.route_error
         if not self.path_ready:
@@ -333,10 +335,10 @@ class OutdoorStanley(rx.Node):
         if "RTK" in reason:
             status = "rtk_lost"
         self._publish_status(status)
-        if reason != self.stop_reason:
-            log = self.get_logger().info if reason == "goal reached" else self.get_logger().warn
-            log(f"Outdoor Stanley stopped: {reason}")
-            self.stop_reason = reason
+        #if reason != self.stop_reason:
+            #log = self.get_logger().info if reason == "goal reached" else self.get_logger().warn
+            #log(f"Outdoor Stanley stopped: {reason}")
+            #self.stop_reason = reason
 
     def _now_s(self):
         return self.get_clock().now().nanoseconds * 1e-9

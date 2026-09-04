@@ -39,6 +39,10 @@ def main(
     bt_charge_done_voltage: float = 12.6,
     bt_charge_voltage_confirm_s: float = 3.0,
     use_rtk: bool = False,
+    digital_line_width: int = 24,
+    digital_line_x: float = 370.0,
+    digital_line_offset_amplitude_px: float = 0.0,
+    digital_line_offset_frequency_hz: float = 0.1,
 ):
     bl = BetterLaunch()
 
@@ -64,6 +68,17 @@ def main(
                use_rtk=use_rtk,)
 
     with bl.group(name):
+        if is_sim:
+            bl.node("svea_charging", "digital_line.py",
+                    name="digital_line",
+                    params=dict(
+                        image_topic=camera_image_topic,
+                        line_width=digital_line_width,
+                        line_x=digital_line_x,
+                        offset_amplitude_px=digital_line_offset_amplitude_px,
+                        offset_frequency_hz=digital_line_offset_frequency_hz,
+                    ))
+
         if not is_sim:
             bl.node("usb_cam", "usb_cam_node_exe",
                     name="usb_cam_node",

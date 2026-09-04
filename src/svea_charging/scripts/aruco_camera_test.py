@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import math
 from pathlib import Path
 
 import cv2
@@ -11,6 +12,7 @@ import rclpy
 import yaml
 from cv_bridge import CvBridge
 from geometry_msgs.msg import Pose, PoseArray
+from nav_msgs.msg import Odometry
 from sensor_msgs.msg import CompressedImage, Image
 from std_msgs.msg import Int32MultiArray, String, Float32
 
@@ -229,6 +231,10 @@ class aruco_camera_test(rx.Node):
     use_aruco_detector_api = rx.Parameter(False)
     publish_debug_image = rx.Parameter(False)
     jpeg_quality = rx.Parameter(80)
+    use_coordinate_distance = rx.Parameter(True)
+    coordinate_pose_topic = rx.Parameter("odometry/local")
+    distance_target_x = rx.Parameter(18.0)
+    distance_target_y = rx.Parameter(-20.0)
 
     detected_ids_pub = rx.Publisher(Int32MultiArray, "aruco/detected_ids")
     poses_pub = rx.Publisher(PoseArray, "aruco/poses")
@@ -236,10 +242,28 @@ class aruco_camera_test(rx.Node):
     debug_image_pub = rx.Publisher(CompressedImage, "aruco/debug_image/compressed")
     distance_pub = rx.Publisher(Float32, "aruco/distance_m")
 
+    @rx.Subscriber(Odometry, coordinate_pose_topic)
+    def _coordinate_pose_callback(self, msg: Odometry):
+        self.coordinate_x = float(msg.pose.pose.position.x)
+        self.coordinate_y = float(msg.pose.pose.position.y)
+
     def on_startup(self):
         self.bridge = CvBridge()
         self.latest_frame = None
         self._warned_fallback_intrinsics = False
+
+        if bool(self.use_coordinate_distance):
+            self.coordinate_x = None
+            self.coordinate_y = None
+            self.get_logger().info(
+                "Coordinate-distance mode enabled "
+                f"(pose_topic={self.coordinate_pose_topic}, "
+                f"target=({float(self.distance_target_x):.3f}, "
+                f"{float(self.distance_target_y):.3f}))"
+            )
+            period = 1.0 / max(float(self.loop_hz), 1.0)
+            self.create_timer(period, self.loop)
+            return
 
         try:
             self.get_logger().info("Initializing OpenCV ArUco module...")
@@ -353,6 +377,10 @@ class aruco_camera_test(rx.Node):
         self.debug_image_pub.publish(msg)
 
     def loop(self):
+        if bool(self.use_coordinate_distance):
+            self._publish_coordinate_distance()
+            return
+
         if self.latest_frame is None:
             return
 
@@ -480,6 +508,19 @@ class aruco_camera_test(rx.Node):
             if key == ord("q"):
                 self.get_logger().info("Shutdown requested from display window (q).")
                 rclpy.shutdown()
+
+    def _publish_coordinate_distance(self):
+        if self.coordinate_x is None or self.coordinate_y is None:
+            self.distance_pub.publish(Float32(data=-1.0))
+            self._publish_status("Waiting for coordinate pose")
+            return
+
+        distance = math.hypot(
+            self.coordinate_x - float(self.distance_target_x),
+            self.coordinate_y - float(self.distance_target_y),
+        )
+        self.distance_pub.publish(Float32(data=float(distance)))
+        self._publish_status(f"Coordinate distance: {distance:.2f} m")
 
 
 if __name__ == "__main__":

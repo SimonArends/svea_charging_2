@@ -141,12 +141,18 @@ class ChargingMissionTree:
         self.bb.active_controller = "line_follower"
         self.bb.mission_phase = "docking"
 
-        if self.bb.charger_visible and self.bb.line_visible:
+        if self.bb.charger_visible and self.bb.line_visible:# and not self.aruco_use_coordinate_distance:
             if self.bb.aruco_distance is not None and self.bb.aruco_distance <= .91:
                 self.set_charging_arm(True)
             else:
                 self.set_charging_arm(False)
             return NodeStatus.RUNNING
+        # elif self.aruco_use_coordinate_distance:
+        #     if self.bb.aruco_distance is not None and self.bb.aruco_distance <= .91:
+        #         self.set_charging_arm(True)
+        #     else:
+        #         self.set_charging_arm(False)
+        #     return NodeStatus.RUNNING
 
         self.set_charging_arm(False)
         return NodeStatus.FAILURE

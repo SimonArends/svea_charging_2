@@ -5,7 +5,7 @@ MAP_NAME = "floor2"
 
 @launch_this
 def main(
-    is_sim: bool = False,
+    is_sim: bool = True,
     use_foxglove: bool = True,
     initial_pose_x: float = -7.4,
     initial_pose_y: float = -15.4,

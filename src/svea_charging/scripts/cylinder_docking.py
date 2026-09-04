@@ -7,7 +7,7 @@ from sensor_msgs.msg import LaserScan
 from std_msgs.msg import Float32, String
 
 from svea_core import rosonic as rx
-from svea_core.interfaces import LocalizationInterface
+from svea_core.interfaces import LocalizationInterface, ActuationInterface
 from rclpy.qos import (
     QoSProfile,
     QoSReliabilityPolicy,
@@ -139,6 +139,8 @@ class cylinder_docking(rx.Node):
 
     left_cylinder_pub = rx.Publisher(Point, "cylinder_docking/left_cylinder")
     right_cylinder_pub = rx.Publisher(Point, "cylinder_docking/right_cylinder")
+
+    actuation = ActuationInterface()
 
 
     @rx.Subscriber(String, 'mission/active_controller', qos_pubber)
@@ -418,6 +420,7 @@ class cylinder_docking(rx.Node):
             self.status_pub.publish(String(data="cylinders_lost"))
             self.steering_error_prev = 0.0
             self.steering_error_integral = 0.0
+            self.actuation.send_control(0.5, 0.2)
             if bool(self.stop_on_lost_cylinders):
                 self.steering_cmd_pub.publish(
                     Float32(data=float(self.lost_cylinders_steering_rad))
@@ -459,6 +462,7 @@ class cylinder_docking(rx.Node):
         self.opening_angle_pub.publish(Float32(data=float(opening_angle_deg)))
         self.status_pub.publish(String(data=self._get_status_text(velocity)))
         self.cylinder_distance_pub.publish(Float32(data=float(cylinder_distance)))
+        self.actuation.send_control(cmd.steering, cmd.velocity)
 
     def _get_status_text(self, velocity: float) -> str:
         if velocity < 0.0:
