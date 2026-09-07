@@ -44,7 +44,7 @@ class OutdoorStanley(rx.Node):
     max_horizontal_accuracy = rx.Parameter(0.50)
     localization_settle_s = rx.Parameter(10.0)
     max_settle_position_spread = rx.Parameter(0.20)
-    use_course_heading = rx.Parameter(True)
+    use_course_heading = rx.Parameter(False)
     course_heading_min_distance = rx.Parameter(0.25)
     course_heading_alpha = rx.Parameter(0.35)
     controller_name = rx.Parameter("stanley")

@@ -45,7 +45,7 @@ class bt_runner(rx.Node):
     dist_to_goal_topic = rx.Parameter("dist_to_goal")
     aruco_distance_topic = rx.Parameter("aruco/distance_m")
     battery_charging_topic = rx.Parameter("/self/mavros/battery")
-    odometry_topic = rx.Parameter("odometry/global")
+    odometry_topic = rx.Parameter("odometry/local")
 
     # --- Cylinder-specific parameters ---
     cylinder_status_topic = rx.Parameter("cylinder_docking/status")

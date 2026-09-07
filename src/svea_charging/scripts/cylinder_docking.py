@@ -2,12 +2,14 @@
 
 from collections import deque
 import numpy as np
+import math
 from geometry_msgs.msg import Point
 from sensor_msgs.msg import LaserScan
 from std_msgs.msg import Float32, String
 
 from svea_core import rosonic as rx
-from svea_core.interfaces import LocalizationInterface, ActuationInterface
+# from svea_core.interfaces import LocalizationInterface, ActuationInterface
+from svea_core.interfaces import LocalizationInterface
 from rclpy.qos import (
     QoSProfile,
     QoSReliabilityPolicy,
@@ -67,7 +69,12 @@ class cylinder_docking(rx.Node):
     scan_topic = rx.Parameter("/scan")
     stop_on_lost_cylinders = rx.Parameter(True)
     controller_name = rx.Parameter("cylinder_docking")
-    active_controller = rx.Parameter("cylinder_docking")
+    active_controller = rx.Parameter("idle")
+    is_sim = rx.Parameter(False)
+    left_cylinder_x = rx.Parameter(5.0)
+    left_cylinder_y = rx.Parameter(-1.5)
+    right_cylinder_x = rx.Parameter(4.7)
+    right_cylinder_y = rx.Parameter(-2.1)
 
     # =========================================================================
     # PERCEPTION & LANDMARK EXTRACTION
@@ -140,7 +147,7 @@ class cylinder_docking(rx.Node):
     left_cylinder_pub = rx.Publisher(Point, "cylinder_docking/left_cylinder")
     right_cylinder_pub = rx.Publisher(Point, "cylinder_docking/right_cylinder")
 
-    actuation = ActuationInterface()
+    # actuation = ActuationInterface()
 
 
     @rx.Subscriber(String, 'mission/active_controller', qos_pubber)
@@ -178,6 +185,8 @@ class cylinder_docking(rx.Node):
         pass
 
     def _scan_callback(self, msg: LaserScan):
+
+
         ranges = np.array(msg.ranges)
         num_points = len(ranges)
         angles = msg.angle_min + np.arange(num_points) * msg.angle_increment
@@ -225,13 +234,13 @@ class cylinder_docking(rx.Node):
         cy_left = float(np.mean(y_left))
         cx_right = float(np.mean(x_right))
         cy_right = float(np.mean(y_right))
+        if not self.is_sim:
+            self.left_cylinder_pos = (cx_left, cy_left)
+            self.right_cylinder_pos = (cx_right, cy_right)
+            self.cylinders_detected = True
 
-        self.left_cylinder_pos = (cx_left, cy_left)
-        self.right_cylinder_pos = (cx_right, cy_right)
-        self.cylinders_detected = True
-
-        self.left_cylinder_pub.publish(Point(x=cx_left, y=cy_left, z=0.0))
-        self.right_cylinder_pub.publish(Point(x=cx_right, y=cy_right, z=0.0))
+            self.left_cylinder_pub.publish(Point(x=cx_left, y=cy_left, z=0.0))
+            self.right_cylinder_pub.publish(Point(x=cx_right, y=cy_right, z=0.0))
 
     def _calculate_steering(self, angular_error, theta_L, theta_R, dt):
         # Safety Check: If cylinders are behind the front axle/base frame, zero steering
@@ -411,16 +420,45 @@ class cylinder_docking(rx.Node):
     def _now_s(self):
         return self.get_clock().now().nanoseconds * 1e-9
 
+    def _point_in_robot_frame(self, point_x, point_y):
+        robot_x, robot_y, robot_yaw, _ = self.localizer.get_state()
+
+        dx = float(point_x) - float(robot_x)
+        dy = float(point_y) - float(robot_y)
+
+        cos_yaw = math.cos(float(robot_yaw))
+        sin_yaw = math.sin(float(robot_yaw))
+
+        return (
+            cos_yaw * dx + sin_yaw * dy,
+            -sin_yaw * dx + cos_yaw * dy,
+        )
+
+    def _get_virtual_cylinders(self):
+        left = self._point_in_robot_frame(
+            self.left_cylinder_x,
+            self.left_cylinder_y
+        )
+        right = self._point_in_robot_frame(
+            self.right_cylinder_x,
+            self.right_cylinder_y
+        )
+
+        return left, right
+
     def loop(self):
         if self.active_controller != str(self.controller_name):
             return
         
+        if self.is_sim:
+            self.cylinders_detected = True
+
         if not self.cylinders_detected:
             self.get_logger().warn("Cylinders lost, stopping the robot.")
             self.status_pub.publish(String(data="cylinders_lost"))
             self.steering_error_prev = 0.0
             self.steering_error_integral = 0.0
-            self.actuation.send_control(0.5, 0.2)
+            # self.actuation.send_control(0.5, 0.2)
             if bool(self.stop_on_lost_cylinders):
                 self.steering_cmd_pub.publish(
                     Float32(data=float(self.lost_cylinders_steering_rad))
@@ -430,8 +468,13 @@ class cylinder_docking(rx.Node):
 
         dt = self.dt_s
         
+
+        if self.is_sim:
+            self.left_cylinder_pos, self.right_cylinder_pos = self._get_virtual_cylinders()
         x_L, y_L = self.left_cylinder_pos
         x_R, y_R = self.right_cylinder_pos
+        # self.left_cylinder_pub.publish(Point(x=x_L, y=y_L, z=0.0))
+        # self.right_cylinder_pub.publish(Point(x=x_R, y=y_R, z=0.0))
         cylinder_distance = (x_L + x_R) / 2.0
 
         theta_L = np.arctan2(y_L, x_L)
@@ -462,7 +505,7 @@ class cylinder_docking(rx.Node):
         self.opening_angle_pub.publish(Float32(data=float(opening_angle_deg)))
         self.status_pub.publish(String(data=self._get_status_text(velocity)))
         self.cylinder_distance_pub.publish(Float32(data=float(cylinder_distance)))
-        self.actuation.send_control(cmd.steering, cmd.velocity)
+        # self.actuation.send_control(cmd.steering, cmd.velocity)
 
     def _get_status_text(self, velocity: float) -> str:
         if velocity < 0.0:

@@ -233,8 +233,10 @@ class aruco_camera_test(rx.Node):
     jpeg_quality = rx.Parameter(80)
     use_coordinate_distance = rx.Parameter(True)
     coordinate_pose_topic = rx.Parameter("odometry/local")
-    distance_target_x = rx.Parameter(18.0)
-    distance_target_y = rx.Parameter(-20.0)
+    # distance_target_x = rx.Parameter(18.0) ##point close to end of trajectory, not perfect yet
+    # distance_target_y = rx.Parameter(-20.0)
+    distance_target_x = rx.Parameter(6.3) ##point at beginning of trajectory for testing
+    distance_target_y = rx.Parameter(-2.3)
 
     detected_ids_pub = rx.Publisher(Int32MultiArray, "aruco/detected_ids")
     poses_pub = rx.Publisher(PoseArray, "aruco/poses")

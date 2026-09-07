@@ -33,7 +33,7 @@
     odometry_timeout_s: 0.30
     gps_timeout_s: 2.50
     rtk_timeout_s: 2.50
-    require_rtk_fixed: true
+    require_rtk_fixed: false
     rtk_fixed_settle_s: 10.0
     max_horizontal_accuracy: 0.50
     localization_settle_s: 10.0
@@ -41,6 +41,6 @@
 
     # Outdoor EKF is GPS/encoder-only, so use RTK position deltas as heading
     # for Stanley instead of trusting odometry yaw.
-    use_course_heading: true
+    use_course_heading: false
     course_heading_min_distance: 0.50
     course_heading_alpha: 0.20

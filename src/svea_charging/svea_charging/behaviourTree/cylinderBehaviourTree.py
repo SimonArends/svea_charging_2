@@ -168,7 +168,7 @@ class ChargingMissionTree:
             return NodeStatus.RUNNING
 
         self.set_charging_arm(False)
-        return NodeStatus.RUNNING
+        return NodeStatus.FAILURE
 
     def _current_running_node_name(self) -> str:
         current = self._deepest_running_node(self.tree)
