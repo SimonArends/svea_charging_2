@@ -71,7 +71,7 @@ def main(
     bt_dock_distance_m: float = 0.6251276731491089,
     bt_switch_distance_m: float = 2.25,
     bt_docking_exit_distance_m: float = 2.75,
-    bt_charge_start_voltage: float = 12.6,
+    bt_charge_start_voltage: float = 12.5,
     bt_charge_done_voltage: float = 12.6,
     bt_charge_voltage_confirm_s: float = 3.0,
     stanley_target_velocity: float = 0.48,
@@ -248,4 +248,10 @@ def main(
             params=dict(
                 controller_timeout_s=control_mux_timeout_s,
             ),
+        )
+
+        bl.node(
+            "svea_charging",
+            "battery_simulator.py",
+            name="battery_simulator",
         )
