@@ -8,6 +8,21 @@ import svea_core.rosonic as rx
 from nav_msgs.msg import Odometry
 from sensor_msgs.msg import BatteryState
 from mavros_msgs.msg import ManualControl
+from std_msgs.msg import Bool, Float32, String
+
+from rclpy.qos import (
+    QoSDurabilityPolicy,
+    QoSHistoryPolicy,
+    QoSProfile,
+    QoSReliabilityPolicy,
+)
+
+qos_pubber = QoSProfile(
+    reliability=QoSReliabilityPolicy.RELIABLE,
+    durability=QoSDurabilityPolicy.VOLATILE,
+    history=QoSHistoryPolicy.KEEP_LAST,
+    depth=1,
+)
 
 
 class battery_simulator(rx.Node):
@@ -24,11 +39,8 @@ class battery_simulator(rx.Node):
     battery_charging_topic = rx.Parameter("/self/mavros/battery")
     odometry_topic = rx.Parameter("odometry/local")
     drive_contol_topic = rx.Parameter("mavros/manual_control/send")
-
-    # Charging station position
-    charging_x = rx.Parameter(4.52)
-    charging_y = rx.Parameter(-1.69)
-    charging_radius = rx.Parameter(0.025)
+    docking_status_topic = rx.Parameter("cylinder_docking/velocity_phase")
+    charging_status_topic = rx.Parameter("/self/mission/charging_status")
 
     # Battery update rate [Hz]
     update_rate = rx.Parameter(10.0)
@@ -46,13 +58,25 @@ class battery_simulator(rx.Node):
         self.manual_control_z = 500
         # Timing
         self.last_update_time = time.monotonic()
+        self.docking_status = False
+        self.charging_status = False
+        self.charging_stopped = False
 
-    # Subscribers
-    @rx.Subscriber(Odometry, odometry_topic)
-    def odometry_cb(self, msg):
-        """ Update the robot position and determine whether it is inside the charging area."""
-        self.robot_x = msg.pose.pose.position.x
-        self.robot_y = msg.pose.pose.position.y
+    @rx.Subscriber(String, docking_status_topic, qos_pubber)
+    def docking_status_cb(self, msg: String):
+        """ Update the docking status. """
+        message = msg.data
+        self.docking_status = message in {"docked"}
+
+    @rx.Subscriber(Bool, charging_status_topic, qos_pubber)
+    def charging_status_cb(self, msg: Bool):
+        """ Update the charging status. """
+        was_charging = self.charging_status
+        self.charging_status = msg.data
+        is_charging = self.charging_status
+        if was_charging and not is_charging:
+            self.get_logger().info("Charging stopped.")
+            self.charging_stopped = True
 
     @rx.Subscriber(ManualControl, drive_contol_topic)
     def manual_control_cb(self, msg):
@@ -66,14 +90,8 @@ class battery_simulator(rx.Node):
     @rx.Timer(0.1)
     def update_battery(self):
         """ Update battery state and publish BatteryState. """
-        # Calculate distance to charging station
-        dx = self.robot_x - self.charging_x
-        dy = self.robot_y - self.charging_y
-        distance = math.sqrt(dx * dx + dy * dy)
-        is_charging = distance <= self.charging_radius
-
         # Determine current
-        if is_charging:
+        if self.docking_status and not self.charging_stopped:
             current = self.battery_charge_current
         elif self.manual_control_z < 490:
             current = self.battery_discharge_current_driving

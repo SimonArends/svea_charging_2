@@ -43,11 +43,13 @@ class bt_runner(rx.Node):
     aruco_distance_topic = rx.Parameter("aruco/distance_m")
     line_status_topic = rx.Parameter("line_follower/status")
     battery_charging_topic = rx.Parameter("/self/mavros/battery")
+    #charging_status_topic = rx.Parameter("mission/charging_status")
 
     active_controller_pub = rx.Publisher(String, "mission/active_controller", qos_pubber)
     phase_pub = rx.Publisher(String, "mission/phase", qos_pubber)
     tree_status_pub = rx.Publisher(String, "mission/tree_status", qos_pubber)
     charging_arm_pub = rx.Publisher(Bool, charging_arm_topic, qos_pubber)
+    charging_status_pub = rx.Publisher(Bool, "mission/charging_status", qos_pubber)
 
     @rx.Subscriber(Float32, dist_to_goal_topic)
     def _dist_to_goal_cb(self, msg: Float32):
@@ -104,6 +106,7 @@ class bt_runner(rx.Node):
         self.active_controller_pub.publish(String(data=self.bb.active_controller))
         self.phase_pub.publish(String(data=self.bb.mission_phase))
         self.tree_status_pub.publish(String(data=status))
+        self.charging_status_pub.publish(Bool(data=self.bb.charging_active))
 
 
 
