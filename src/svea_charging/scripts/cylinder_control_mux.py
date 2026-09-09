@@ -88,10 +88,14 @@ class control_mux(rx.Node):
 
     def _get_selected_command(self) -> ControllerCommand:
         active = str(self.active_controller)
+        if active == "pre_stanley":
+            return self._validated_command(self.stanley_cmd)
         if active == "stanley":
             return self._validated_command(self.stanley_cmd)
         if active == "cylinder_docking":
             return self._validated_command(self.cylinder_cmd)
+        if active == "post_stanley":
+            return self._validated_command(self.stanley_cmd)
         return ControllerCommand()
 
     def _validated_command(self, cmd: ControllerCommand) -> ControllerCommand:

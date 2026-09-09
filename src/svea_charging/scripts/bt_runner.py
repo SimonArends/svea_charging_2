@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
-
+import math
 from std_msgs.msg import Bool, Float32, String
 from sensor_msgs.msg import BatteryState
+from nav_msgs.msg import Odometry
 
 from rclpy.qos import (
     QoSDurabilityPolicy,
@@ -43,7 +44,8 @@ class bt_runner(rx.Node):
     aruco_distance_topic = rx.Parameter("aruco/distance_m")
     line_status_topic = rx.Parameter("line_follower/status")
     battery_charging_topic = rx.Parameter("/self/mavros/battery")
-    #charging_status_topic = rx.Parameter("mission/charging_status")
+    odometry_topic = rx.Parameter("odometry/local")   
+    stanley_status_topic = rx.Parameter("outdoor_stanley/status")
 
     active_controller_pub = rx.Publisher(String, "mission/active_controller", qos_pubber)
     phase_pub = rx.Publisher(String, "mission/phase", qos_pubber)
@@ -54,6 +56,10 @@ class bt_runner(rx.Node):
     @rx.Subscriber(Float32, dist_to_goal_topic)
     def _dist_to_goal_cb(self, msg: Float32):
         self.bb.dist_to_station = float(msg.data)
+    
+    @rx.Subscriber(String, stanley_status_topic)
+    def _stanley_status(self, msg: String):
+    	self.bb.stanley_status = msg.data
 
     @rx.Subscriber(Float32, aruco_distance_topic)
     def _aruco_distance_cb(self, msg: Float32):
@@ -75,6 +81,15 @@ class bt_runner(rx.Node):
         self.bb.battery_current = float(msg.current)
         self.bb.battery_voltage = float(msg.voltage)
 
+    @rx.Subscriber(Odometry, odometry_topic)
+    def _odometry_cb(self, msg: Odometry):
+        x = float(msg.pose.pose.position.x)
+        y = float(msg.pose.pose.position.y)
+        if x < 0:
+            self.bb.dist_origin = math.hypot(x, y)
+        else:
+            self.bb.dist_origin = 0
+    
     def on_startup(self):
         self.bb = MissionBlackboard(
             switch_distance_m=float(self.switch_distance_m),
@@ -97,6 +112,7 @@ class bt_runner(rx.Node):
             f"charge_done={self.bb.charge_done_voltage:.2f} V, "
             f"confirm={self.bb.charge_voltage_confirm_s:.1f} s)"
         )
+        self.dist_origin = None
 
     def _set_charging_arm(self, enabled: bool):
         self.charging_arm_pub.publish(Bool(data=enabled))
@@ -107,8 +123,6 @@ class bt_runner(rx.Node):
         self.phase_pub.publish(String(data=self.bb.mission_phase))
         self.tree_status_pub.publish(String(data=status))
         self.charging_status_pub.publish(Bool(data=self.bb.charging_active))
-
-
 
 if __name__ == "__main__":
     bt_runner.main()

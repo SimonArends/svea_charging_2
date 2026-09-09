@@ -41,6 +41,7 @@ class battery_simulator(rx.Node):
     drive_contol_topic = rx.Parameter("mavros/manual_control/send")
     docking_status_topic = rx.Parameter("cylinder_docking/velocity_phase")
     charging_status_topic = rx.Parameter("/self/mission/charging_status")
+    mission_phase_topic = rx.Parameter("/self/mission/phase")
 
     # Battery update rate [Hz]
     update_rate = rx.Parameter(10.0)
@@ -61,6 +62,7 @@ class battery_simulator(rx.Node):
         self.docking_status = False
         self.charging_status = False
         self.charging_stopped = False
+        self.mission_phase = None
 
     @rx.Subscriber(String, docking_status_topic, qos_pubber)
     def docking_status_cb(self, msg: String):
@@ -77,6 +79,11 @@ class battery_simulator(rx.Node):
         if was_charging and not is_charging:
             self.get_logger().info("Charging stopped.")
             self.charging_stopped = True
+    
+    @rx.Subscriber(String, mission_phase_topic, qos_pubber)
+    def mission_phase_cb(self, msg: String):
+        """ Update the mission phase. """
+        self.mission_phase = msg.data
 
     @rx.Subscriber(ManualControl, drive_contol_topic)
     def manual_control_cb(self, msg):
@@ -91,7 +98,7 @@ class battery_simulator(rx.Node):
     def update_battery(self):
         """ Update battery state and publish BatteryState. """
         # Determine current
-        if self.docking_status and not self.charging_stopped:
+        if self.docking_status and (self.mission_phase == "docking" or self.mission_phase == "docked" or self.mission_phase == "charging"):
             current = self.battery_charge_current
         elif self.manual_control_z < 490:
             current = self.battery_discharge_current_driving

@@ -38,7 +38,8 @@ ROUTE_PRESETS = {
 def main(
     name: str = "self",
     enabled: bool = True,
-    initial_pose_a: float = -0.548181,
+    #initial_pose_a: float = -0.548181,
+    initial_pose_a: float = -0.021,
     route_preset: str = "charging_station",
     route_config: str = "",
     use_datum: bool = True,
@@ -71,8 +72,8 @@ def main(
     bt_dock_distance_m: float = 0.6251276731491089,
     bt_switch_distance_m: float = 2.25,
     bt_docking_exit_distance_m: float = 2.75,
-    bt_charge_start_voltage: float = 12.5,
-    bt_charge_done_voltage: float = 12.6,
+    bt_charge_start_voltage: float = 12.485,
+    bt_charge_done_voltage: float = 12.55,
     bt_charge_voltage_confirm_s: float = 3.0,
     stanley_target_velocity: float = 0.48,
     stanley_turn_velocity: float = 0.3,
@@ -82,6 +83,8 @@ def main(
     apply_camera_v4l2_fix: bool = False,
     camera_exposure_time_absolute: int = 150,
     camera_white_balance_temperature: int = 6500,
+    approach_a_params = "",
+    post_a_params = "",
 ):
     """Outdoor charging mission: RTK/GPS Stanley approach, then line follower."""
     bl = BetterLaunch()
@@ -109,6 +112,10 @@ def main(
         datum_file = bl.find("svea_charging", "params/outdoor_datum.yaml")
     if not aruco_calibration_file:
         aruco_calibration_file = bl.find("svea_charging", "params/camera.yaml")
+    if not approach_a_params:
+        approach_a_params = bl.find("svea_charging", "params/routes/approach_a.yaml")
+    if not post_a_params:
+        post_a_params = bl.find("svea_charging", "params/routes/post_a.yaml")
 
     bl.include(
         "svea_core",
@@ -210,6 +217,34 @@ def main(
             params=dict(
                 enabled=enabled,
                 controller_name="stanley",
+                target_velocity=stanley_target_velocity,
+                turn_velocity=stanley_turn_velocity,
+                max_steering_rad=stanley_max_steering_rad,
+            ),
+        )
+
+        bl.node(
+            "svea_charging",
+            "pre_stanley.py",
+            name="pre_stanley",
+            param_files=approach_a_params,
+            params=dict(
+                enabled=enabled,
+                controller_name="pre_stanley",
+                target_velocity=stanley_target_velocity,
+                turn_velocity=stanley_turn_velocity,
+                max_steering_rad=stanley_max_steering_rad,
+            ),
+        )
+
+        bl.node(
+            "svea_charging",
+            "post_stanley.py",
+            name="post_stanley",
+            param_files=post_a_params,
+            params=dict(
+                enabled=enabled,
+                controller_name="post_stanley",
                 target_velocity=stanley_target_velocity,
                 turn_velocity=stanley_turn_velocity,
                 max_steering_rad=stanley_max_steering_rad,

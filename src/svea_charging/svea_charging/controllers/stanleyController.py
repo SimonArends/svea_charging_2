@@ -176,14 +176,6 @@ class StanleyController:
 
 
     def calc_target_index(self, cx, cy, start_idx=0):
-        """
-        Compute index in the trajectory list of the target.
-
-        :param state: (State object)
-        :param cx: [float]
-        :param cy: [float]
-        :return: (int, float)
-        """
         if not cx or not cy:
             raise ValueError("Stanley path is empty; cannot compute target index.")
 
@@ -191,13 +183,26 @@ class StanleyController:
         fx = self.x + L * np.cos(self.yaw)
         fy = self.y + L * np.sin(self.yaw)
 
-        # Search forward from the previous target. This keeps the selected path
-        # heading and the cross-track error tied to the same trajectory point.
-        start_idx = int(np.clip(start_idx, 0, min(len(cx), len(cy)) - 1))
-        dx = [fx - icx for icx in cx]
-        dy = [fy - icy for icy in cy]
-        d = np.hypot(dx[start_idx:], dy[start_idx:])
-        target_idx = start_idx + int(np.argmin(d))
+        n = min(len(cx), len(cy))
+        start_idx = int(np.clip(start_idx, 0, n - 1))
+
+        # Search the whole trajectory (not just forward from start_idx), so a
+        # lower index can be picked if it's genuinely nearer and ahead of the
+        # vehicle. Direction is enforced by the "ahead" filter below, not by
+        # index order.
+        dx = np.array([fx - icx for icx in cx])
+        dy = np.array([fy - icy for icy in cy])
+        d = np.hypot(dx, dy)
+
+        heading = np.array([np.cos(self.yaw), np.sin(self.yaw)])
+        ahead = (-dx) * heading[0] + (-dy) * heading[1] >= 0.0
+
+        if np.any(ahead):
+            d_search = np.where(ahead, d, np.inf)
+        else:
+            d_search = d  # nothing ahead anywhere; fall back to plain nearest
+
+        target_idx = int(np.argmin(d_search))
 
         # Project RMS error onto front axle vector
         front_axle_vec = [-np.cos(self.yaw + np.pi / 2),

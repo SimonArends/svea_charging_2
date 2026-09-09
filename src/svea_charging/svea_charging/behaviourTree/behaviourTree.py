@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 import time
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -31,10 +32,14 @@ class MissionBlackboard:
     charge_done_voltage: float = 12.6
     charge_voltage_confirm_s: float = 3.0
     charge_voltage_reached_at: float | None = None
-    active_controller: str = "stanley"
-    mission_phase: str = "approach"
+    active_controller: str = "pre_stanley"
+    mission_phase: str = "pre_approach"
     last_tree_status: str = NodeStatus.RUNNING
     last_running_node: str = "startup"
+    dist_origin: float | None = None
+    was_charged: bool = False
+    stanley_status: str | None = None
+
 
 
 class ChargingMissionTree:
@@ -56,6 +61,11 @@ class ChargingMissionTree:
     ):
         self.bb = blackboard
         self.set_charging_arm = set_charging_arm
+        pre_approach_phase = Fallback(
+            ActionNode(self.is_near_origin, "is_near_origin"),
+            ActionNode(self.run_pre_stanley_approach, "run_pre_stanley_approach"),
+            name="pre_approach_phase",
+        )
         approach_phase = Fallback(
             ActionNode(self.is_near_docking_zone, "is_near_docking_zone"),
             ActionNode(self.run_stanley_approach, "run_stanley_approach"),
@@ -68,10 +78,16 @@ class ChargingMissionTree:
         )
         charge_phase = Sequence(
             ActionNode(self.needs_charging, "needs_charging"),
+            pre_approach_phase,
             approach_phase,
             docking_phase,
             ActionNode(self.wait_until_charged, "wait_until_charged"),
             name="charge_phase",
+        )
+        exit_phase = Fallback(
+            ActionNode(self.is_parked, "is_parked"),
+            ActionNode(self.exit_station, "exit_station"),
+            name="exit_phase",
         )
 
         self.tree = Sequence(
@@ -85,7 +101,7 @@ class ChargingMissionTree:
                 charge_phase,
                 name="decision_phase",
             ),
-            ActionNode(self.exit_station, "exit_station"),
+            exit_phase,
             name="charging_mission",
         )
 
@@ -129,8 +145,20 @@ class ChargingMissionTree:
         self.bb.mission_phase = "approach"
         return NodeStatus.RUNNING
 
+    def run_pre_stanley_approach(self) -> str:
+        self.bb.active_controller = "pre_stanley"
+        self.bb.mission_phase = "pre_approach"
+        return NodeStatus.RUNNING
+
+    def is_near_origin(self) -> str:
+        dist = self.bb.dist_origin
+        if dist is not None and dist < 0.62:
+            self.bb.mission_phase = "approach"
+            return NodeStatus.SUCCESS
+        return NodeStatus.FAILURE
+
     def is_docked(self) -> str:
-        if self.bb.battery_current > -0.7:
+        if self.bb.battery_current > -0.7 or self.bb.was_charged:
             self.bb.active_controller = "docked"
             self.bb.mission_phase = "docked"
             self.bb.charging_active = True
@@ -169,6 +197,7 @@ class ChargingMissionTree:
     def needs_charging(self) -> str:
         if (
             self.bb.charging_active
+            or self.bb.was_charged
             or self.bb.battery_voltage is None
             or self.bb.battery_voltage < self.bb.charge_start_voltage
         ):
@@ -179,6 +208,9 @@ class ChargingMissionTree:
 
     def is_charged(self) -> str:
         voltage = self.bb.battery_voltage
+        if self.bb.was_charged:
+            return NodeStatus.SUCCESS
+
         if voltage is None or voltage < self.bb.charge_done_voltage:
             self.bb.charge_voltage_reached_at = None
             return NodeStatus.FAILURE
@@ -194,9 +226,10 @@ class ChargingMissionTree:
             return NodeStatus.FAILURE
 
         if voltage >= self.bb.charge_done_voltage:
-            self.bb.active_controller = "idle"
+            self.bb.active_controller = "post_stanley"
             self.bb.mission_phase = "charged"
             self.bb.charging_active = False
+            self.bb.was_charged = True
             return NodeStatus.SUCCESS
         return NodeStatus.FAILURE
 
@@ -209,8 +242,18 @@ class ChargingMissionTree:
         return NodeStatus.RUNNING
 
     def exit_station(self) -> str:
+        if not self.bb.was_charged:
+            return NodeStatus.FAILURE
         self.set_charging_arm(False)
-        self.bb.active_controller = "stanley"
+        self.bb.active_controller = "post_stanley"
         self.bb.mission_phase = "exit_station"
         self.bb.charge_voltage_reached_at = None
         return NodeStatus.RUNNING
+    
+    def is_parked(self) -> str:
+        if self.bb.stanley_status == "goal_reached":
+            self.bb.active_controller = "idle"
+            self.bb.mission_phase = "parked"
+            self.bb.was_charged = False
+            return NodeStatus.SUCCESS
+        return NodeStatus.FAILURE

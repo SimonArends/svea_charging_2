@@ -47,7 +47,7 @@ class OutdoorStanley(rx.Node):
     use_course_heading = rx.Parameter(False)
     course_heading_min_distance = rx.Parameter(0.25)
     course_heading_alpha = rx.Parameter(0.35)
-    controller_name = rx.Parameter("stanley")
+    controller_name = rx.Parameter("pre_stanley")
     active_controller = rx.Parameter("idle")
 
     # Fixed [x, y] positions in the outdoor global EKF's map frame.
