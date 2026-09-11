@@ -46,6 +46,7 @@ class bt_runner(rx.Node):
     battery_charging_topic = rx.Parameter("/self/mavros/battery")
     odometry_topic = rx.Parameter("odometry/local")   
     stanley_status_topic = rx.Parameter("outdoor_stanley/status")
+    transport_location_topic = rx.Parameter("outdoor_stanley/location")
 
     active_controller_pub = rx.Publisher(String, "mission/active_controller", qos_pubber)
     phase_pub = rx.Publisher(String, "mission/phase", qos_pubber)
@@ -60,6 +61,10 @@ class bt_runner(rx.Node):
     @rx.Subscriber(String, stanley_status_topic)
     def _stanley_status(self, msg: String):
     	self.bb.stanley_status = msg.data
+    	
+    @rx.Subscriber(String, transport_location_topic)
+    def _transport_location(self, msg: String):
+    	self.bb.transport_location = msg.data	
 
     @rx.Subscriber(Float32, aruco_distance_topic)
     def _aruco_distance_cb(self, msg: Float32):

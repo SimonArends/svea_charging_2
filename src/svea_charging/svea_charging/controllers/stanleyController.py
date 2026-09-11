@@ -15,7 +15,7 @@ sys.path.append(str(pathlib.Path(__file__).parent.parent.parent))
 from svea_charging.third_party.PythonRobotics.PathPlanning.CubicSpline import cubic_spline_planner
 
 # Parameters
-k = 0.28 # control gain
+k = 0.4 # control gain
 Kp = 0.6  # speed proportional gain
 dt = 0.05  # [s] time difference
 L = 0.2  # [m] Wheel base of vehicle (TODO: check this value)
@@ -186,12 +186,18 @@ class StanleyController:
         n = min(len(cx), len(cy))
         start_idx = int(np.clip(start_idx, 0, n - 1))
 
+        window = 20  # tune to path resolution (ds=0.05 → 50 = 2.5 m)
+        lo = max(start_idx - window, 0)
+        hi = min(start_idx + window, n)
+        dx = np.array([fx - cx[i] for i in range(lo, hi)])
+        dy = np.array([fy - cy[i] for i in range(lo, hi)])
+
         # Search the whole trajectory (not just forward from start_idx), so a
         # lower index can be picked if it's genuinely nearer and ahead of the
         # vehicle. Direction is enforced by the "ahead" filter below, not by
         # index order.
-        dx = np.array([fx - icx for icx in cx])
-        dy = np.array([fy - icy for icy in cy])
+        # dx = np.array([fx - icx for icx in cx])
+        # dy = np.array([fy - icy for icy in cy])
         d = np.hypot(dx, dy)
 
         heading = np.array([np.cos(self.yaw), np.sin(self.yaw)])
@@ -202,12 +208,14 @@ class StanleyController:
         else:
             d_search = d  # nothing ahead anywhere; fall back to plain nearest
 
-        target_idx = int(np.argmin(d_search))
+        local_idx = int(np.argmin(d_search))   # index into the window (dx/dy)
+        target_idx = lo + local_idx            # global index into cx/cy
+        # target_idx = int(np.argmin(d_search))
 
         # Project RMS error onto front axle vector
         front_axle_vec = [-np.cos(self.yaw + np.pi / 2),
                         -np.sin(self.yaw + np.pi / 2)]
-        error_front_axle = np.dot([dx[target_idx], dy[target_idx]], front_axle_vec)
+        error_front_axle = np.dot([dx[local_idx], dy[local_idx]], front_axle_vec)
 
         return target_idx, error_front_axle
 

@@ -32,13 +32,14 @@ class MissionBlackboard:
     charge_done_voltage: float = 12.6
     charge_voltage_confirm_s: float = 3.0
     charge_voltage_reached_at: float | None = None
-    active_controller: str = "pre_stanley"
-    mission_phase: str = "pre_approach"
+    active_controller: str = "transport_stanley"
+    mission_phase: str = "transport"
     last_tree_status: str = NodeStatus.RUNNING
     last_running_node: str = "startup"
     dist_origin: float | None = None
     was_charged: bool = False
     stanley_status: str | None = None
+    transport_location: str | None = None
 
 
 
@@ -61,10 +62,10 @@ class ChargingMissionTree:
     ):
         self.bb = blackboard
         self.set_charging_arm = set_charging_arm
-        pre_approach_phase = Fallback(
-            ActionNode(self.is_near_origin, "is_near_origin"),
-            ActionNode(self.run_pre_stanley_approach, "run_pre_stanley_approach"),
-            name="pre_approach_phase",
+        transport_or_charge = Fallback(
+            ActionNode(self.needs_charging, "needs_charging"),
+            ActionNode(self.run_transport_stanley_approach, "run_transport_stanley_approach"),
+            name="transport_phase",
         )
         approach_phase = Fallback(
             ActionNode(self.is_near_docking_zone, "is_near_docking_zone"),
@@ -77,8 +78,8 @@ class ChargingMissionTree:
             name="docking_phase",
         )
         charge_phase = Sequence(
-            ActionNode(self.needs_charging, "needs_charging"),
-            pre_approach_phase,
+            transport_or_charge,
+            ActionNode(self.allowed_to_charge, "allowed_to_charge"),
             approach_phase,
             docking_phase,
             ActionNode(self.wait_until_charged, "wait_until_charged"),
@@ -145,17 +146,20 @@ class ChargingMissionTree:
         self.bb.mission_phase = "approach"
         return NodeStatus.RUNNING
 
-    def run_pre_stanley_approach(self) -> str:
-        self.bb.active_controller = "pre_stanley"
-        self.bb.mission_phase = "pre_approach"
+    def run_transport_stanley_approach(self) -> str:
+        self.bb.active_controller = "transport_stanley"
+        self.bb.mission_phase = "transport"
         return NodeStatus.RUNNING
 
-    def is_near_origin(self) -> str:
-        dist = self.bb.dist_origin
-        if dist is not None and dist < 0.62:
-            self.bb.mission_phase = "approach"
-            return NodeStatus.SUCCESS
-        return NodeStatus.FAILURE
+    def allowed_to_charge(self) -> str:
+        # if self.bb.transport_location == "A" or self.bb.transport_location == "B":
+        #     return NodeStatus.SUCCESS
+        #     self.bb.mission_phase = "approach"
+        # self.bb.active_controller = "idle"
+        # self.bb.mission_phase = "charge_not_needed"
+        #return NodeStatus.FAILURE
+        self.bb.mission_phase = "approach"
+        return NodeStatus.SUCCESS
 
     def is_docked(self) -> str:
         if self.bb.battery_current > -0.7 or self.bb.was_charged:
@@ -201,9 +205,10 @@ class ChargingMissionTree:
             or self.bb.battery_voltage is None
             or self.bb.battery_voltage < self.bb.charge_start_voltage
         ):
-            return NodeStatus.SUCCESS
-        self.bb.active_controller = "idle"
-        self.bb.mission_phase = "charge_not_needed"
+            if self.bb.transport_location == "A" or self.bb.transport_location == "B":
+                self.bb.mission_phase = "approach"
+                self.bb.active_controller = "idle"
+                return NodeStatus.SUCCESS
         return NodeStatus.FAILURE
 
     def is_charged(self) -> str:

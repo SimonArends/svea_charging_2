@@ -38,8 +38,12 @@ ROUTE_PRESETS = {
 def main(
     name: str = "self",
     enabled: bool = True,
+    transport_start_location: str = "A",
     #initial_pose_a: float = -0.548181,
-    initial_pose_a: float = -0.021,
+    #initial_pose_a: float = -0.021,
+    initial_pose_x: float = -1.2,
+    initial_pose_y: float = 0.0,
+    initial_pose_a: float = 1.5,
     route_preset: str = "charging_station",
     route_config: str = "",
     use_datum: bool = True,
@@ -70,9 +74,9 @@ def main(
     docking_target_velocity: float = 0.09,
     dock_target_angle_deg: float = 85.0,
     bt_dock_distance_m: float = 0.6251276731491089,
-    bt_switch_distance_m: float = 2.25,
+    bt_switch_distance_m: float = 1.0,
     bt_docking_exit_distance_m: float = 2.75,
-    bt_charge_start_voltage: float = 12.485,
+    bt_charge_start_voltage: float = 12.45,
     bt_charge_done_voltage: float = 12.55,
     bt_charge_voltage_confirm_s: float = 3.0,
     stanley_target_velocity: float = 0.48,
@@ -85,6 +89,7 @@ def main(
     camera_white_balance_temperature: int = 6500,
     approach_a_params = "",
     post_a_params = "",
+    transport_stanley_params = "",
 ):
     """Outdoor charging mission: RTK/GPS Stanley approach, then line follower."""
     bl = BetterLaunch()
@@ -116,6 +121,13 @@ def main(
         approach_a_params = bl.find("svea_charging", "params/routes/approach_a.yaml")
     if not post_a_params:
         post_a_params = bl.find("svea_charging", "params/routes/post_a.yaml")
+    if not transport_stanley_params:
+        transport_stanley_params = bl.find("svea_charging", "params/routes/transport_stanley.yaml")
+
+    if transport_start_location == "B":
+        initial_pose_x = 1.2
+        initial_pose_y = 0.0
+        initial_pose_a = -1.64
 
     bl.include(
         "svea_core",
@@ -123,6 +135,8 @@ def main(
         name=name,
         is_sim=True,
         is_indoor=False,
+        initial_pose_x=initial_pose_x,
+        initial_pose_y=initial_pose_y,
         initial_pose_a=initial_pose_a,
         use_localization=True,
         use_map=True,
@@ -223,17 +237,32 @@ def main(
             ),
         )
 
+        # bl.node(
+        #     "svea_charging",
+        #     "pre_stanley.py",
+        #     name="pre_stanley",
+        #     param_files=approach_a_params,
+        #     params=dict(
+        #         enabled=enabled,
+        #         controller_name="pre_stanley",
+        #         target_velocity=stanley_target_velocity,
+        #         turn_velocity=stanley_turn_velocity,
+        #         max_steering_rad=stanley_max_steering_rad,
+        #     ),
+        # )
+
         bl.node(
             "svea_charging",
-            "pre_stanley.py",
-            name="pre_stanley",
-            param_files=approach_a_params,
+            "transport_stanley.py",
+            name="transport_stanley",
+            param_files=transport_stanley_params,
             params=dict(
                 enabled=enabled,
-                controller_name="pre_stanley",
+                controller_name="transport_stanley",
                 target_velocity=stanley_target_velocity,
                 turn_velocity=stanley_turn_velocity,
                 max_steering_rad=stanley_max_steering_rad,
+                location=transport_start_location,
             ),
         )
 
