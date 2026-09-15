@@ -43,16 +43,18 @@ class bt_runner(rx.Node):
     dist_to_goal_topic = rx.Parameter("dist_to_goal")
     aruco_distance_topic = rx.Parameter("aruco/distance_m")
     line_status_topic = rx.Parameter("line_follower/status")
-    battery_charging_topic = rx.Parameter("/self/mavros/battery")
+    battery_charging_topic = rx.Parameter("mavros/battery")
     odometry_topic = rx.Parameter("odometry/local")   
     stanley_status_topic = rx.Parameter("outdoor_stanley/status")
     transport_location_topic = rx.Parameter("outdoor_stanley/location")
+    charge_permission_topic = rx.Parameter("mission/charge_permission")
 
     active_controller_pub = rx.Publisher(String, "mission/active_controller", qos_pubber)
     phase_pub = rx.Publisher(String, "mission/phase", qos_pubber)
     tree_status_pub = rx.Publisher(String, "mission/tree_status", qos_pubber)
     charging_arm_pub = rx.Publisher(Bool, charging_arm_topic, qos_pubber)
     charging_status_pub = rx.Publisher(Bool, "mission/charging_status", qos_pubber)
+    need_charging_pub = rx.Publisher(Bool, "mission/need_charging", qos_pubber)
 
     @rx.Subscriber(Float32, dist_to_goal_topic)
     def _dist_to_goal_cb(self, msg: Float32):
@@ -85,6 +87,10 @@ class bt_runner(rx.Node):
     def _battery_charging_cb(self, msg: BatteryState):
         self.bb.battery_current = float(msg.current)
         self.bb.battery_voltage = float(msg.voltage)
+
+    @rx.Subscriber(Bool, charge_permission_topic, qos_pubber)
+    def _charge_permission_cb(self, msg: Bool):
+    	self.bb.charge_permission = msg.data
 
     @rx.Subscriber(Odometry, odometry_topic)
     def _odometry_cb(self, msg: Odometry):
@@ -128,6 +134,7 @@ class bt_runner(rx.Node):
         self.phase_pub.publish(String(data=self.bb.mission_phase))
         self.tree_status_pub.publish(String(data=status))
         self.charging_status_pub.publish(Bool(data=self.bb.charging_active))
+        self.need_charging_pub.publish(Bool(data=self.bb.need_charging))
 
 if __name__ == "__main__":
     bt_runner.main()

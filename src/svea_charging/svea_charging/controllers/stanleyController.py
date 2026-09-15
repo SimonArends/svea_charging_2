@@ -15,7 +15,7 @@ sys.path.append(str(pathlib.Path(__file__).parent.parent.parent))
 from svea_charging.third_party.PythonRobotics.PathPlanning.CubicSpline import cubic_spline_planner
 
 # Parameters
-k = 0.4 # control gain
+k = 0.6 # control gain
 Kp = 0.6  # speed proportional gain
 dt = 0.05  # [s] time difference
 L = 0.2  # [m] Wheel base of vehicle (TODO: check this value)
@@ -148,7 +148,7 @@ class StanleyController:
         theta_e = self.normalize_angle(cyaw[current_target_idx] - self.yaw)
         self.yaw_error = theta_e # for providing output to external
         # theta_d corrects the cross track error
-        theta_d = np.arctan2(k * error_front_axle, max(self.v, 0.4))# added division to reduce steering angle for better stability at low speeds
+        theta_d = np.arctan2(k * error_front_axle, max(self.v*0.5, 0.2))# added division to reduce steering angle for better stability at low speeds
         # self.node.get_logger().info(f"Theta_e: {theta_e}, Theta_d: {theta_d}")
         # Steering control
         requested_delta = float(np.clip(theta_e + theta_d,

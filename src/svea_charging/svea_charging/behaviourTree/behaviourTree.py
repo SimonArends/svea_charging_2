@@ -40,6 +40,8 @@ class MissionBlackboard:
     was_charged: bool = False
     stanley_status: str | None = None
     transport_location: str | None = None
+    need_charging: bool = False
+    charge_permission: bool = False
 
 
 
@@ -158,8 +160,12 @@ class ChargingMissionTree:
         # self.bb.active_controller = "idle"
         # self.bb.mission_phase = "charge_not_needed"
         #return NodeStatus.FAILURE
-        self.bb.mission_phase = "approach"
-        return NodeStatus.SUCCESS
+        if self.bb.charge_permission:
+            self.bb.mission_phase = "approach"
+            return NodeStatus.SUCCESS
+        self.bb.active_controller = "idle"
+        self.bb.mission_phase = "charge_not_needed_or_allowed"
+        return NodeStatus.FAILURE
 
     def is_docked(self) -> str:
         if self.bb.battery_current > -0.7 or self.bb.was_charged:
@@ -208,7 +214,9 @@ class ChargingMissionTree:
             if self.bb.transport_location == "A" or self.bb.transport_location == "B":
                 self.bb.mission_phase = "approach"
                 self.bb.active_controller = "idle"
+                self.bb.need_charging = True
                 return NodeStatus.SUCCESS
+        self.bb.need_charging = False
         return NodeStatus.FAILURE
 
     def is_charged(self) -> str:
@@ -253,6 +261,7 @@ class ChargingMissionTree:
         self.bb.active_controller = "post_stanley"
         self.bb.mission_phase = "exit_station"
         self.bb.charge_voltage_reached_at = None
+        self.bb.need_charging = False
         return NodeStatus.RUNNING
     
     def is_parked(self) -> str:

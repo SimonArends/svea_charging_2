@@ -52,7 +52,7 @@ def main(
     rtk_baud: int = 115200,
     rtk_username: str = "ITRL03",
     rtk_password: str = "171488",
-    use_foxglove: bool = True,
+    use_foxglove: bool = False,
     use_gps: bool = False,
     use_aruco_camera: bool = True,
     camera_image_topic: str = "image_raw",
@@ -90,6 +90,11 @@ def main(
     approach_a_params = "",
     post_a_params = "",
     transport_stanley_params = "",
+    # Map
+    use_map: bool = True,
+    map_pkg: str = 'svea_core',
+    map_name: str = 'sml',
+    map_topic: str = '/map',
 ):
     """Outdoor charging mission: RTK/GPS Stanley approach, then line follower."""
     bl = BetterLaunch()
@@ -123,199 +128,222 @@ def main(
         post_a_params = bl.find("svea_charging", "params/routes/post_a.yaml")
     if not transport_stanley_params:
         transport_stanley_params = bl.find("svea_charging", "params/routes/transport_stanley.yaml")
+    
+    bl.node("nav2_map_server", "map_server",
+                name="map_server",
+                params=dict(yaml_filename=bl.find(map_pkg, f"{map_name}.yaml"),
+                            use_sim_time=False,
+                            topic_name=map_topic))
 
-    if transport_start_location == "B":
-        initial_pose_x = 1.2
-        initial_pose_y = 0.0
-        initial_pose_a = -1.64
+    bl.include("foxglove_bridge", "foxglove_bridge_launch.xml",
+                   port=8765)
 
-    bl.include(
-        "svea_core",
-        "svea.launch.py",
-        name=name,
-        is_sim=True,
-        is_indoor=False,
-        initial_pose_x=initial_pose_x,
-        initial_pose_y=initial_pose_y,
-        initial_pose_a=initial_pose_a,
-        use_localization=True,
-        use_map=True,
-        map_name = "floor2",
-        use_rtk=use_gps,
-        rtk_device=rtk_device,
-        rtk_baud=rtk_baud,
-        rtk_username=rtk_username,
-        rtk_password=rtk_password,
-        use_datum=use_datum,
-        datum_service="datum",
-        datum_file=datum_file,
-        use_foxglove=use_foxglove,
+    bl.node(
+        "svea_charging",
+        "automatic_scheduler.py",
+        name="automatic_scheduler",
+        params=dict(
+        charge_done_voltage = bt_charge_done_voltage,
+        ),
     )
 
-    with bl.group(name):
-        bl.node(
-            "usb_cam",
-            "usb_cam_node_exe",
-            name="usb_cam_node",
-            params=dict(
-                video_device=camera_video_device,
-                camera_name="narrow_stereo",
-                frame_id=camera_frame_id,
-                pixel_format="mjpeg2rgb",
-                image_width=640,
-                image_height=480,
-                framerate=30.0,
-                camera_info_url=f"file://{aruco_calibration_file}",
-                brightness=120,
-                gain=10,
-                auto_white_balance=False,
-                white_balance=4000,
-                autoexposure=False,
-                exposure=700,
-                autofocus=True,
-                focus=-1,
-            ),
-            remaps={
-                "/image_raw": camera_image_topic,
-                "/camera_info": "camera/camera_info",
-            },
+    INITIAL_POSES = {
+    "svea_a": (-1.2, 0.0, 1.5, "A", "svea_b"),
+    "svea_b": (1.2, 0.0, -1.64, "B", "svea_a"),
+    }
+
+    for name, (init_x, init_y, init_a, start_loc, other_name) in INITIAL_POSES.items():
+
+
+        bl.include(
+            "svea_core",
+            "svea.launch.py",
+            name=name,
+            is_sim=True,
+            is_indoor=False,
+            initial_pose_x=init_x,
+            initial_pose_y=init_y,
+            initial_pose_a=init_a,
+            use_localization=True,
+            use_map=False,
+            map_name = "floor2",
+            use_rtk=use_gps,
+            rtk_device=rtk_device,
+            rtk_baud=rtk_baud,
+            rtk_username=rtk_username,
+            rtk_password=rtk_password,
+            use_datum=use_datum,
+            datum_service="datum",
+            datum_file=datum_file,
+            use_foxglove=use_foxglove,
         )
 
-        if apply_camera_v4l2_fix:
-            # usb_cam_node's own autoexposure/auto_white_balance params
-            # silently no-op on this camera's v4l2 driver (control names
-            # don't match), so the fix has to go through v4l2-ctl directly.
-            # See LINE_FOLLOWER_CAMERA_HANDOFF.md problem 1. Values are
-            # per-robot/per-camera - override via launch args if they don't
-            # hold on a different unit.
+        with bl.group(name):
             bl.node(
-                "svea_charging",
-                "set_camera_ctrls.py",
-                name="set_camera_ctrls",
+                "usb_cam",
+                "usb_cam_node_exe",
+                name="usb_cam_node",
                 params=dict(
                     video_device=camera_video_device,
-                    exposure_time_absolute=camera_exposure_time_absolute,
-                    white_balance_temperature=camera_white_balance_temperature,
+                    camera_name="narrow_stereo",
+                    frame_id=camera_frame_id,
+                    pixel_format="mjpeg2rgb",
+                    image_width=640,
+                    image_height=480,
+                    framerate=30.0,
+                    camera_info_url=f"file://{aruco_calibration_file}",
+                    brightness=120,
+                    gain=10,
+                    auto_white_balance=False,
+                    white_balance=4000,
+                    autoexposure=False,
+                    exposure=700,
+                    autofocus=True,
+                    focus=-1,
                 ),
+                remaps={
+                    "/image_raw": camera_image_topic,
+                    "/camera_info": "camera/camera_info",
+                },
             )
 
-        if use_aruco_camera:
+            if apply_camera_v4l2_fix:
+                # usb_cam_node's own autoexposure/auto_white_balance params
+                # silently no-op on this camera's v4l2 driver (control names
+                # don't match), so the fix has to go through v4l2-ctl directly.
+                # See LINE_FOLLOWER_CAMERA_HANDOFF.md problem 1. Values are
+                # per-robot/per-camera - override via launch args if they don't
+                # hold on a different unit.
+                bl.node(
+                    "svea_charging",
+                    "set_camera_ctrls.py",
+                    name="set_camera_ctrls",
+                    params=dict(
+                        video_device=camera_video_device,
+                        exposure_time_absolute=camera_exposure_time_absolute,
+                        white_balance_temperature=camera_white_balance_temperature,
+                    ),
+                )
+
+            if use_aruco_camera:
+                bl.node(
+                    "svea_charging",
+                    "aruco_camera_test.py",
+                    name="aruco_camera_test",
+                    params=dict(
+                        dictionary=aruco_dictionary,
+                        marker_length_m=aruco_marker_length_m,
+                        display=aruco_display,
+                        loop_hz=aruco_loop_hz,
+                        frame_id=aruco_frame_id,
+                        use_aruco_detector_api=aruco_use_aruco_detector_api,
+                        publish_debug_image=aruco_publish_debug_image,
+                        jpeg_quality=aruco_jpeg_quality,
+                        generate_marker_on_startup=aruco_generate_marker_on_startup,
+                        marker_id=aruco_marker_id,
+                        marker_size_px=aruco_marker_size_px,
+                        output=aruco_output,
+                        calibration_file=aruco_calibration_file,
+                        focal_length_px=aruco_focal_length_px,
+                        image_topic=camera_image_topic,
+                    ),
+                )
+
             bl.node(
                 "svea_charging",
-                "aruco_camera_test.py",
-                name="aruco_camera_test",
+                "outdoor_stanley.py",
+                name="outdoor_stanley",
+                param_files=route_config,
                 params=dict(
-                    dictionary=aruco_dictionary,
-                    marker_length_m=aruco_marker_length_m,
-                    display=aruco_display,
-                    loop_hz=aruco_loop_hz,
-                    frame_id=aruco_frame_id,
-                    use_aruco_detector_api=aruco_use_aruco_detector_api,
-                    publish_debug_image=aruco_publish_debug_image,
-                    jpeg_quality=aruco_jpeg_quality,
-                    generate_marker_on_startup=aruco_generate_marker_on_startup,
-                    marker_id=aruco_marker_id,
-                    marker_size_px=aruco_marker_size_px,
-                    output=aruco_output,
-                    calibration_file=aruco_calibration_file,
-                    focal_length_px=aruco_focal_length_px,
-                    image_topic=camera_image_topic,
+                    enabled=enabled,
+                    controller_name="stanley",
+                    target_velocity=stanley_target_velocity,
+                    turn_velocity=stanley_turn_velocity,
+                    max_steering_rad=stanley_max_steering_rad,
                 ),
             )
 
-        bl.node(
-            "svea_charging",
-            "outdoor_stanley.py",
-            name="outdoor_stanley",
-            param_files=route_config,
-            params=dict(
-                enabled=enabled,
-                controller_name="stanley",
-                target_velocity=stanley_target_velocity,
-                turn_velocity=stanley_turn_velocity,
-                max_steering_rad=stanley_max_steering_rad,
-            ),
-        )
+            # bl.node(
+            #     "svea_charging",
+            #     "pre_stanley.py",
+            #     name="pre_stanley",
+            #     param_files=approach_a_params,
+            #     params=dict(
+            #         enabled=enabled,
+            #         controller_name="pre_stanley",
+            #         target_velocity=stanley_target_velocity,
+            #         turn_velocity=stanley_turn_velocity,
+            #         max_steering_rad=stanley_max_steering_rad,
+            #     ),
+            # )
 
-        # bl.node(
-        #     "svea_charging",
-        #     "pre_stanley.py",
-        #     name="pre_stanley",
-        #     param_files=approach_a_params,
-        #     params=dict(
-        #         enabled=enabled,
-        #         controller_name="pre_stanley",
-        #         target_velocity=stanley_target_velocity,
-        #         turn_velocity=stanley_turn_velocity,
-        #         max_steering_rad=stanley_max_steering_rad,
-        #     ),
-        # )
+            bl.node(
+                "svea_charging",
+                "transport_stanley.py",
+                name="transport_stanley",
+                param_files=transport_stanley_params,
+                params=dict(
+                    enabled=enabled,
+                    controller_name="transport_stanley",
+                    target_velocity=stanley_target_velocity,
+                    turn_velocity=stanley_turn_velocity,
+                    max_steering_rad=stanley_max_steering_rad,
+                    location=start_loc,
+                ),
+            )
 
-        bl.node(
-            "svea_charging",
-            "transport_stanley.py",
-            name="transport_stanley",
-            param_files=transport_stanley_params,
-            params=dict(
-                enabled=enabled,
-                controller_name="transport_stanley",
-                target_velocity=stanley_target_velocity,
-                turn_velocity=stanley_turn_velocity,
-                max_steering_rad=stanley_max_steering_rad,
-                location=transport_start_location,
-            ),
-        )
+            bl.node(
+                "svea_charging",
+                "post_stanley.py",
+                name="post_stanley",
+                param_files=post_a_params,
+                params=dict(
+                    enabled=enabled,
+                    controller_name="post_stanley",
+                    target_velocity=stanley_target_velocity,
+                    turn_velocity=stanley_turn_velocity,
+                    max_steering_rad=stanley_max_steering_rad,
+                ),
+            )
 
-        bl.node(
-            "svea_charging",
-            "post_stanley.py",
-            name="post_stanley",
-            param_files=post_a_params,
-            params=dict(
-                enabled=enabled,
-                controller_name="post_stanley",
-                target_velocity=stanley_target_velocity,
-                turn_velocity=stanley_turn_velocity,
-                max_steering_rad=stanley_max_steering_rad,
-            ),
-        )
+            bl.node(
+                "svea_charging",
+                "cylinder_docking.py",
+                name="cylinder_docking",
+                params={
+                    "scan_topic": "scan",
+                    "target_velocity": docking_target_velocity,
+                    "dock_target_angle_deg": dock_target_angle_deg,
+                    "localization/base_frame": f"{name}/base_link",
+                },
+            )
 
-        bl.node(
-            "svea_charging",
-            "cylinder_docking.py",
-            name="cylinder_docking",
-            params={
-                "scan_topic": "scan",
-                "target_velocity": docking_target_velocity,
-                "dock_target_angle_deg": dock_target_angle_deg,
-                "localization/base_frame": f"{name}/base_link",
-            },
-        )
+            bl.node(
+                "svea_charging",
+                "bt_runner.py",
+                name="bt_runner",
+                params=dict(
+                    switch_distance_m=bt_switch_distance_m,
+                    docking_exit_distance_m=bt_docking_exit_distance_m,
+                    charge_start_voltage=bt_charge_start_voltage,
+                    charge_done_voltage=bt_charge_done_voltage,
+                    charge_voltage_confirm_s=bt_charge_voltage_confirm_s,
+                ),
+            )
 
-        bl.node(
-            "svea_charging",
-            "bt_runner.py",
-            name="bt_runner",
-            params=dict(
-                switch_distance_m=bt_switch_distance_m,
-                docking_exit_distance_m=bt_docking_exit_distance_m,
-                charge_start_voltage=bt_charge_start_voltage,
-                charge_done_voltage=bt_charge_done_voltage,
-                charge_voltage_confirm_s=bt_charge_voltage_confirm_s,
-            ),
-        )
+            bl.node(
+                "svea_charging",
+                "cylinder_control_mux.py",
+                name="cylinder_control_mux",
+                params=dict(
+                    name_svea = name,
+                    other_svea = other_name,        
+                    controller_timeout_s=control_mux_timeout_s,
+                ),
+            )
 
-        bl.node(
-            "svea_charging",
-            "cylinder_control_mux.py",
-            name="cylinder_control_mux",
-            params=dict(
-                controller_timeout_s=control_mux_timeout_s,
-            ),
-        )
-
-        bl.node(
-            "svea_charging",
-            "battery_simulator.py",
-            name="battery_simulator",
-        )
+            bl.node(
+                "svea_charging",
+                "battery_simulator.py",
+                name="battery_simulator",
+            )

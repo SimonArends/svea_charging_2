@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 from dataclasses import dataclass
-
+from nav_msgs.msg import Odometry
 from std_msgs.msg import Bool, Float32, String
 
 from rclpy.qos import (
@@ -31,14 +31,48 @@ class ControllerCommand:
 
 
 class control_mux(rx.Node):
+    name_svea = rx.Parameter("svea_a")
+    other_svea = rx.Parameter("svea_b")
     controller_timeout_s = rx.Parameter(0.3)
     output_hz = rx.Parameter(20.0)
     active_controller = rx.Parameter("idle")
     charging_arm_topic = rx.Parameter("/charging_arm")
     charging_arm_active_xtr1 = rx.Parameter(100.0)
     charging_arm_inactive_xtr1 = rx.Parameter(0.0)
+    # region_topic = f"/{name_svea}/region"
+    # other_region_topic = f"/{other_svea}/region"
+
+    # region_pub = rx.Publisher(String, region_topic, qos_pubber)
 
     actuation = ActuationInterface()
+
+    @rx.Subscriber(Odometry, "odometry/local")
+    def _odometry_cb(self, msg: Odometry):
+        x = float(msg.pose.pose.position.x)
+        y = float(msg.pose.pose.position.y)
+
+        new_region = self.get_regions(x, y)
+
+        if new_region != self.region:
+            self.region = new_region
+            self.region_entry_time = self._now_s()
+
+    # @rx.Subscriber(String, other_region_topic, qos_pubber)
+    def _other_region_cb(self, msg: String):
+        data = msg.data.split("|")
+
+        self.other_region = data[0]
+        self.other_region_entry_time = float(data[1])
+
+        if self.regions_overlap(self.region, self.other_region):
+
+            # Other robot entered first -> I must stop
+            if self.other_region_entry_time < self.region_entry_time:
+                self.waiting = True
+
+            # I entered first -> I keep going
+            else:
+                self.waiting = False
 
     @rx.Subscriber(String, "mission/active_controller", qos_pubber)
     def _active_controller_cb(self, msg: String):
@@ -69,14 +103,49 @@ class control_mux(rx.Node):
         self.cylinder_cmd.stamp_s = self._now_s()
 
     def on_startup(self):
+        self.region = ""
+        self.other_region = ""
+
+        self.region_entry_time = self._now_s()
+        self.other_region_entry_time = 0.0
+
+        self.waiting = False
         self.stanley_cmd = ControllerCommand()
         self.cylinder_cmd = ControllerCommand()
         self.charging_arm_enabled = False
+
+        region_topic = f"/{self.name_svea}/region"
+        other_region_topic = f"/{self.other_svea}/region"
+
+        self.region_pub = self.create_publisher(
+            String,
+            region_topic,
+            qos_pubber,
+        )
+
+        self.other_region_sub = self.create_subscription(
+            String,
+            other_region_topic,
+            self._other_region_cb,
+            qos_pubber,
+        )
+
         period = 1.0 / max(float(self.output_hz), 1.0)
         self.create_timer(period, self.loop)
+
         self.get_logger().info("Control mux started")
+        # self.region_pub.publish(String(data=str(self.region)))
 
     def loop(self):
+        data = f"{self.region}|{self.region_entry_time}"
+        self.region_pub.publish(String(data=data))
+
+        if self.waiting:
+            if not self.regions_overlap(self.region, self.other_region):
+                self.waiting = False
+            else:
+                self.actuation.send_control(0.0, 0.0)
+                return
         cmd = self._get_selected_command()
         xtr1 = (
             float(self.charging_arm_active_xtr1)
@@ -108,6 +177,40 @@ class control_mux(rx.Node):
     def _now_s(self) -> float:
         return self.get_clock().now().nanoseconds * 1e-9
 
+    def get_regions(self, x, y):
+        regions = []
+        # 4 L-shaped regions: (x_min, x_max, y_min, y_max, cutout...)
+        l_regions = {
+            "C1": (-2.5, 0.0, 0.0, 2.5, -1.7, 0.0, 0.0, 0.95),
+            "C2": (0.0, 2.5, 0.0, 2.5, 0.0, 1.7, 0.0, 0.95),
+            "C3": (0.7, 2.5, -2.5, 0.0, 0.7, 1.7, -0.95, 0.0),
+            "C4": (-2.5, 0.7, -2.5, 0.0, -1.7, 0.7, -0.95, 0.0),
+        }
+
+        # 3 rectangles: (x_min, x_max, y_min, y_max)
+        rectangles = {
+            "A": (-1.7, -0.9, -0.95, 0.95),
+            "charger": (-0.9, 0.9, -0.95, 0.95),
+            "B": (0.9, 1.7, -0.95, 0.95),
+        }
+
+        # Check L-shaped regions
+        for name, (xmin, xmax, ymin, ymax,
+                cxmin, cxmax, cymin, cymax) in l_regions.items():
+            in_outer = xmin <= x <= xmax and ymin <= y <= ymax
+            in_cutout = cxmin <= x <= cxmax and cymin <= y <= cymax
+            if in_outer and not in_cutout:
+                regions.append(name)
+
+        # Check rectangles
+        for name, (xmin, xmax, ymin, ymax) in rectangles.items():
+            if xmin <= x <= xmax and ymin <= y <= ymax:
+                regions.append(name)
+
+        return " ".join(regions)
+
+    def regions_overlap(self, region_a, region_b):
+        return bool(set(region_a.split()) & set(region_b.split()))
 
 if __name__ == "__main__":
     control_mux.main()

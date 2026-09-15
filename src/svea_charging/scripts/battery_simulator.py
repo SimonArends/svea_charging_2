@@ -32,24 +32,22 @@ class battery_simulator(rx.Node):
     battery_full_voltage = rx.Parameter(12.6)
     # 900 mAh = 0.9 Ah
     battery_capacity_ah = rx.Parameter(0.9)
-    battery_charge_current = rx.Parameter(19.0)
+    battery_charge_current = rx.Parameter(3.0)
     battery_discharge_current_stationary = rx.Parameter(-0.9)
     battery_discharge_current_driving = rx.Parameter(-1.8)
 
-    battery_charging_topic = rx.Parameter("/self/mavros/battery")
+    battery_charging_topic = rx.Parameter("mavros/battery")
     odometry_topic = rx.Parameter("odometry/local")
     drive_contol_topic = rx.Parameter("mavros/manual_control/send")
     docking_status_topic = rx.Parameter("cylinder_docking/velocity_phase")
-    charging_status_topic = rx.Parameter("/self/mission/charging_status")
-    mission_phase_topic = rx.Parameter("/self/mission/phase")
-    parking_location_topic = rx.Parameter("/outdoor_stanley/parking_location")
+    charging_status_topic = rx.Parameter("mission/charging_status")
+    mission_phase_topic = rx.Parameter("mission/phase")
 
     # Battery update rate [Hz]
     update_rate = rx.Parameter(10.0)
 
     # Publishers
     battery_pub = rx.Publisher(BatteryState, battery_charging_topic)
-    parking_pub = rx.Publisher(String, parking_location_topic)
 
     # State
     def on_startup(self):
@@ -65,7 +63,6 @@ class battery_simulator(rx.Node):
         self.charging_status = False
         self.charging_stopped = False
         self.mission_phase = None
-        self.parking_location = "B"
 
     @rx.Subscriber(String, docking_status_topic, qos_pubber)
     def docking_status_cb(self, msg: String):
@@ -142,7 +139,6 @@ class battery_simulator(rx.Node):
         
         # Publish
         self.battery_pub.publish(msg)
-        self.parking_pub.publish(String(data=str(self.parking_location)))
 
 
 if __name__ == "__main__":
