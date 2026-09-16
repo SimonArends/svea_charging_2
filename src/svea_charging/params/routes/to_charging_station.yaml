@@ -1,5 +1,8 @@
 /**:
   ros__parameters:
+    # The description below explains the route to the outdoor stanley. However, for the experiment 2 other routes are used. They go from points A (-1.2,0) or B (1.2,0) to the charger at the origin. 
+    # The trajectories are the shortest route that can be taken such that the svea stays within the area of the experiment and follows the 'roads' used by the experiment, but still are somewhat long. 
+    #
     # Fixed [x, y] coordinates from /self/odometry/global, in metres.
     # Same start point as to_parking_lot.yaml, but the right turn happens
     # earlier and leads to a relocated charging station (station moved for

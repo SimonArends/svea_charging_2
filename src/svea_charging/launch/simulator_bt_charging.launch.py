@@ -18,6 +18,9 @@ ROUTE_PRESETS = {
     # curvature-checked geometry against the real turn before trusting it
     # at full speed. Update aruco_marker_id here if a new/different marker
     # was printed for the relocated station.
+
+    #route and parameters have been adjusted for simulation. Now contains routes from point A (-1.2, 0) and B (1.2, 0) the origin. 
+    #Old routes and other experimental routes are commented out
     "charging_station": dict(
         route_config="params/routes/to_charging_station.yaml",
         aruco_marker_id=11,
@@ -36,11 +39,10 @@ ROUTE_PRESETS = {
 
 @launch_this
 def main(
+    is_sim: bool = True,
     name: str = "self",
     enabled: bool = True,
     transport_start_location: str = "A",
-    #initial_pose_a: float = -0.548181,
-    #initial_pose_a: float = -0.021,
     initial_pose_x: float = -1.2,
     initial_pose_y: float = 0.0,
     initial_pose_a: float = 1.5,
@@ -52,7 +54,7 @@ def main(
     rtk_baud: int = 115200,
     rtk_username: str = "ITRL03",
     rtk_password: str = "171488",
-    use_foxglove: bool = False,
+    use_foxglove: bool = False,  #node is launched seperately when launching 2 SVEA's, this is the reason to have it false in general
     use_gps: bool = False,
     use_aruco_camera: bool = True,
     camera_image_topic: str = "image_raw",
@@ -74,29 +76,31 @@ def main(
     docking_target_velocity: float = 0.09,
     dock_target_angle_deg: float = 85.0,
     bt_dock_distance_m: float = 0.6251276731491089,
-    bt_switch_distance_m: float = 1.0,
+    bt_switch_distance_m: float = 1.0, #the aruco is placed right in the charging point (origin) in simulation. An actual aruco would need to be somewhere else.
     bt_docking_exit_distance_m: float = 2.75,
-    bt_charge_start_voltage: float = 12.45,
+    bt_charge_start_voltage: float = 12.45, #lower gives more trips in transport mode, if you are close to charge done voltage you might always be charging.
     bt_charge_done_voltage: float = 12.55,
     bt_charge_voltage_confirm_s: float = 3.0,
-    stanley_target_velocity: float = 0.48,
-    stanley_turn_velocity: float = 0.3,
-    stanley_max_steering_rad: float = 0.35,
+    stanley_target_velocity: float = 0.48, #gives approx 0.33 velocity commands by the Stanley. Stanley does not reach target. 
+    stanley_turn_velocity: float = 0.3, 
+    stanley_max_steering_rad: float = 0.35, #something to adjust?
     control_mux_timeout_s: float = 1.0,
     camera_video_device: str = "/dev/video0",
     apply_camera_v4l2_fix: bool = False,
     camera_exposure_time_absolute: int = 150,
     camera_white_balance_temperature: int = 6500,
-    approach_a_params = "",
     post_a_params = "",
     transport_stanley_params = "",
     # Map
     use_map: bool = True,
     map_pkg: str = 'svea_core',
-    map_name: str = 'sml',
+    map_name: str = 'floor2',
     map_topic: str = '/map',
+    battery_charge_current: float = 19.5,
+    battery_discharge_current_stationary: float = -0.9,
+    battery_discharge_current_driving: float = -1.8,
 ):
-    """Outdoor charging mission: RTK/GPS Stanley approach, then line follower."""
+
     bl = BetterLaunch()
 
     camera_frame_id = camera_frame_id.format(name=name)
@@ -122,8 +126,6 @@ def main(
         datum_file = bl.find("svea_charging", "params/outdoor_datum.yaml")
     if not aruco_calibration_file:
         aruco_calibration_file = bl.find("svea_charging", "params/camera.yaml")
-    if not approach_a_params:
-        approach_a_params = bl.find("svea_charging", "params/routes/approach_a.yaml")
     if not post_a_params:
         post_a_params = bl.find("svea_charging", "params/routes/post_a.yaml")
     if not transport_stanley_params:
@@ -144,6 +146,9 @@ def main(
         name="automatic_scheduler",
         params=dict(
         charge_done_voltage = bt_charge_done_voltage,
+        charging_current = battery_charge_current,
+        idle_current = battery_discharge_current_stationary,
+        moving_current = battery_discharge_current_driving,
         ),
     )
 
@@ -160,19 +165,18 @@ def main(
 
     for name, (init_x, init_y, init_a, start_loc, other_name) in INITIAL_POSES.items():
 
-
         bl.include(
             "svea_core",
             "svea.launch.py",
             name=name,
-            is_sim=True,
+            is_sim=is_sim,
             is_indoor=False,
             initial_pose_x=init_x,
             initial_pose_y=init_y,
             initial_pose_a=init_a,
             use_localization=True,
             use_map=False,
-            map_name = "floor2",
+            map_name = "floor2", #the digital cylinders are launched in this map, the rest is not used.
             use_rtk=use_gps,
             rtk_device=rtk_device,
             rtk_baud=rtk_baud,
@@ -237,6 +241,7 @@ def main(
                     "aruco_camera_test.py",
                     name="aruco_camera_test",
                     params=dict(
+                        is_sim=is_sim,
                         dictionary=aruco_dictionary,
                         marker_length_m=aruco_marker_length_m,
                         display=aruco_display,
@@ -252,6 +257,7 @@ def main(
                         calibration_file=aruco_calibration_file,
                         focal_length_px=aruco_focal_length_px,
                         image_topic=camera_image_topic,
+                        **{"localization/base_frame": f"{name}/base_link"},
                     ),
                 )
 
@@ -266,22 +272,9 @@ def main(
                     target_velocity=stanley_target_velocity,
                     turn_velocity=stanley_turn_velocity,
                     max_steering_rad=stanley_max_steering_rad,
+                    **{"localization/base_frame": f"{name}/base_link"},
                 ),
             )
-
-            # bl.node(
-            #     "svea_charging",
-            #     "pre_stanley.py",
-            #     name="pre_stanley",
-            #     param_files=approach_a_params,
-            #     params=dict(
-            #         enabled=enabled,
-            #         controller_name="pre_stanley",
-            #         target_velocity=stanley_target_velocity,
-            #         turn_velocity=stanley_turn_velocity,
-            #         max_steering_rad=stanley_max_steering_rad,
-            #     ),
-            # )
 
             bl.node(
                 "svea_charging",
@@ -295,6 +288,7 @@ def main(
                     turn_velocity=stanley_turn_velocity,
                     max_steering_rad=stanley_max_steering_rad,
                     location=start_loc,
+                    **{"localization/base_frame": f"{name}/base_link"},
                 ),
             )
 
@@ -309,6 +303,7 @@ def main(
                     target_velocity=stanley_target_velocity,
                     turn_velocity=stanley_turn_velocity,
                     max_steering_rad=stanley_max_steering_rad,
+                    **{"localization/base_frame": f"{name}/base_link"},
                 ),
             )
 
@@ -345,11 +340,19 @@ def main(
                     name_svea = name,
                     other_svea = other_name,        
                     controller_timeout_s=control_mux_timeout_s,
+                    is_sim = is_sim,
+                    **{"localization/base_frame": f"{name}/base_link"},
                 ),
             )
-
-            bl.node(
-                "svea_charging",
-                "battery_simulator.py",
-                name="battery_simulator",
-            )
+            
+            if is_sim:
+                bl.node(
+                    "svea_charging",
+                    "battery_simulator.py",
+                    name="battery_simulator",
+                    params=dict(
+                        battery_charge_current=battery_charge_current,
+                        battery_discharge_current_stationary = battery_discharge_current_stationary,        
+                        battery_discharge_current_driving = battery_discharge_current_driving,
+                    ),
+                )

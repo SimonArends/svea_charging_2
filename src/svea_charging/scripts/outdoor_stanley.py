@@ -22,6 +22,7 @@ from visualization_msgs.msg import Marker
 
 from svea_charging.controllers.stanleyController import StanleyController
 from svea_core import rosonic as rx
+from svea_core.interfaces import LocalizationInterface
 
 
 class OutdoorStanley(rx.Node):
@@ -36,20 +37,20 @@ class OutdoorStanley(rx.Node):
     corridor_width = rx.Parameter(1.50)
     turn_curvature_threshold = rx.Parameter(0.50)
     minimum_turning_radius = rx.Parameter(0.40)
-    odometry_timeout_s = rx.Parameter(0.30)
-    use_gps = rx.Parameter(False)
+    use_gps = rx.Parameter(False) #set false for indoor experiment for the experiment
     gps_timeout_s = rx.Parameter(2.50)
     rtk_timeout_s = rx.Parameter(2.50)
-    require_rtk_fixed = rx.Parameter(False)
+    require_rtk_fixed = rx.Parameter(False) #set false for indoor experiment for the experiment
     rtk_fixed_settle_s = rx.Parameter(10.0)
     max_horizontal_accuracy = rx.Parameter(0.50)
     localization_settle_s = rx.Parameter(10.0)
     max_settle_position_spread = rx.Parameter(0.20)
-    use_course_heading = rx.Parameter(False)
+    use_course_heading = rx.Parameter(False) #set false for indoor experiment
     course_heading_min_distance = rx.Parameter(0.25)
     course_heading_alpha = rx.Parameter(0.35)
     controller_name = rx.Parameter("stanley")
     active_controller = rx.Parameter("idle")
+    localizer = LocalizationInterface()
 
     
     # Fixed [x, y] positions in the outdoor global EKF's map frame.
@@ -64,7 +65,6 @@ class OutdoorStanley(rx.Node):
         "[[50.0, 0.0], [40.0, 0.0], [30.0, 0.0], [20.0, 0.0], "
         "[10.0, 0.0], [5.0, 0.0], [0.0, 0.0]]"
     )
-    odometry_topic = rx.Parameter("odometry/local")
     gps_topic = rx.Parameter("gps/fix")
     carrier_solution_topic = rx.Parameter("gps/carrier_solution")
     horizontal_accuracy_topic = rx.Parameter("gps/horizontal_accuracy")
@@ -85,23 +85,6 @@ class OutdoorStanley(rx.Node):
     waypoints_pub = rx.Publisher(Marker, "outdoor_stanley/waypoints_marker")
     traj_pub = rx.Publisher(Marker, "outdoor_stanley/traj_marker")
 
-    @rx.Subscriber(Odometry, odometry_topic)
-    def _odometry_cb(self, msg: Odometry):
-        q = msg.pose.pose.orientation
-        odom_yaw = euler_from_quaternion([q.x, q.y, q.z, q.w])[2]
-        x = float(msg.pose.pose.position.x)
-        y = float(msg.pose.pose.position.y)
-        yaw = self._heading_from_course(x, y, odom_yaw)
-        self.state = (
-            x,
-            y,
-            float(yaw),
-            float(msg.twist.twist.linear.x),
-        )
-        self.last_odom_s = self._now_s()
-        samples = getattr(self, "settle_samples", None)
-        if samples is not None and not getattr(self, "path_ready", False):
-            samples.append((self.last_odom_s, self.state[0], self.state[1]))
 
     @rx.Subscriber(NavSatFix, gps_topic, qos_profile=qos_profile_sensor_data)
     def _gps_cb(self, msg: NavSatFix):
@@ -149,7 +132,7 @@ class OutdoorStanley(rx.Node):
         self.active_controller = msg.data
 
     def on_startup(self):
-        self.state = None
+        self.state = self.localizer.get_state()
         self.last_odom_s = None
         self.last_gps_s = None
         self.last_rtk_s = None
@@ -223,6 +206,11 @@ class OutdoorStanley(rx.Node):
         )
 
     def loop(self):
+        self.state = self.localizer.get_state()
+        self.last_odom_s = self._now_s()
+        samples = getattr(self, "settle_samples", None)
+        if samples is not None and not getattr(self, "path_ready", False):
+            samples.append((self.last_odom_s, self.state[0], self.state[1]))
         self._publish_location()
         # A disabled observer must not compete with manual control or another
         # controller for the LLI. Once enabled, every inhibit condition sends
@@ -279,8 +267,6 @@ class OutdoorStanley(rx.Node):
         if self.state is None:
             return "waiting for global odometry"
         now = self._now_s()
-        if self.last_odom_s is None or now - self.last_odom_s > float(self.odometry_timeout_s):
-            return "global odometry stale"
         if bool(self.use_gps):
             if self.last_gps_s is None or now - self.last_gps_s > float(self.gps_timeout_s):
                 return "GPS fix stale or unavailable"

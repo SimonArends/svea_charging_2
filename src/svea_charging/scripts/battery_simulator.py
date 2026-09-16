@@ -5,7 +5,6 @@ import time
 
 import svea_core.rosonic as rx
 
-from nav_msgs.msg import Odometry
 from sensor_msgs.msg import BatteryState
 from mavros_msgs.msg import ManualControl
 from std_msgs.msg import Bool, Float32, String
@@ -37,7 +36,6 @@ class battery_simulator(rx.Node):
     battery_discharge_current_driving = rx.Parameter(-1.8)
 
     battery_charging_topic = rx.Parameter("mavros/battery")
-    odometry_topic = rx.Parameter("odometry/local")
     drive_contol_topic = rx.Parameter("mavros/manual_control/send")
     docking_status_topic = rx.Parameter("cylinder_docking/velocity_phase")
     charging_status_topic = rx.Parameter("mission/charging_status")

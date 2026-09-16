@@ -13,7 +13,7 @@ from rclpy.qos import (
 
 from svea_core import rosonic as rx
 from svea_core.interfaces import ActuationInterface
-
+from svea_core.interfaces import LocalizationInterface
 
 qos_pubber = QoSProfile(
     reliability=QoSReliabilityPolicy.RELIABLE,
@@ -31,33 +31,18 @@ class ControllerCommand:
 
 
 class control_mux(rx.Node):
+    is_sim = rx.Parameter(True)
     name_svea = rx.Parameter("svea_a")
     other_svea = rx.Parameter("svea_b")
     controller_timeout_s = rx.Parameter(0.3)
     output_hz = rx.Parameter(20.0)
     active_controller = rx.Parameter("idle")
-    charging_arm_topic = rx.Parameter("/charging_arm")
+    charging_arm_topic = rx.Parameter("charging_arm")
     charging_arm_active_xtr1 = rx.Parameter(100.0)
     charging_arm_inactive_xtr1 = rx.Parameter(0.0)
-    # region_topic = f"/{name_svea}/region"
-    # other_region_topic = f"/{other_svea}/region"
-
-    # region_pub = rx.Publisher(String, region_topic, qos_pubber)
-
+    localizer = LocalizationInterface()
     actuation = ActuationInterface()
 
-    @rx.Subscriber(Odometry, "odometry/local")
-    def _odometry_cb(self, msg: Odometry):
-        x = float(msg.pose.pose.position.x)
-        y = float(msg.pose.pose.position.y)
-
-        new_region = self.get_regions(x, y)
-
-        if new_region != self.region:
-            self.region = new_region
-            self.region_entry_time = self._now_s()
-
-    # @rx.Subscriber(String, other_region_topic, qos_pubber)
     def _other_region_cb(self, msg: String):
         data = msg.data.split("|")
 
@@ -134,9 +119,17 @@ class control_mux(rx.Node):
         self.create_timer(period, self.loop)
 
         self.get_logger().info("Control mux started")
-        # self.region_pub.publish(String(data=str(self.region)))
 
     def loop(self):
+        x = self.localizer.get_x()
+        y = self.localizer.get_y()
+
+        new_region = self.get_regions(x, y)
+
+        if new_region != self.region:
+            self.region = new_region
+            self.region_entry_time = self._now_s()
+
         data = f"{self.region}|{self.region_entry_time}"
         self.region_pub.publish(String(data=data))
 
@@ -153,13 +146,14 @@ class control_mux(rx.Node):
             else float(self.charging_arm_inactive_xtr1)
         )
         self.actuation.send_xtr(xtr1=xtr1)
-        self.actuation.send_control(cmd.steering, cmd.velocity)
+        if self.is_sim:
+            self.actuation.send_control(cmd.steering, cmd.velocity)
+        else:
+            self.actuation.send_control(cmd.steering, -cmd.velocity)
 
     def _get_selected_command(self) -> ControllerCommand:
         active = str(self.active_controller)
         if active == "transport_stanley":
-            return self._validated_command(self.stanley_cmd)
-        if active == "pre_stanley":
             return self._validated_command(self.stanley_cmd)
         if active == "stanley":
             return self._validated_command(self.stanley_cmd)

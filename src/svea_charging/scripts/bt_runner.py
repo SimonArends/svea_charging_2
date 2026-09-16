@@ -2,7 +2,6 @@
 import math
 from std_msgs.msg import Bool, Float32, String
 from sensor_msgs.msg import BatteryState
-from nav_msgs.msg import Odometry
 
 from rclpy.qos import (
     QoSDurabilityPolicy,
@@ -38,13 +37,12 @@ class bt_runner(rx.Node):
     charge_start_voltage = rx.Parameter(12.2)
     charge_done_voltage = rx.Parameter(12.6)
     charge_voltage_confirm_s = rx.Parameter(3.0)
-    charging_arm_topic = rx.Parameter("/charging_arm")
+    charging_arm_topic = rx.Parameter("charging_arm")
 
     dist_to_goal_topic = rx.Parameter("dist_to_goal")
     aruco_distance_topic = rx.Parameter("aruco/distance_m")
     line_status_topic = rx.Parameter("line_follower/status")
-    battery_charging_topic = rx.Parameter("mavros/battery")
-    odometry_topic = rx.Parameter("odometry/local")   
+    battery_charging_topic = rx.Parameter("mavros/battery")  
     stanley_status_topic = rx.Parameter("outdoor_stanley/status")
     transport_location_topic = rx.Parameter("outdoor_stanley/location")
     charge_permission_topic = rx.Parameter("mission/charge_permission")
@@ -91,15 +89,6 @@ class bt_runner(rx.Node):
     @rx.Subscriber(Bool, charge_permission_topic, qos_pubber)
     def _charge_permission_cb(self, msg: Bool):
     	self.bb.charge_permission = msg.data
-
-    @rx.Subscriber(Odometry, odometry_topic)
-    def _odometry_cb(self, msg: Odometry):
-        x = float(msg.pose.pose.position.x)
-        y = float(msg.pose.pose.position.y)
-        if x < 0:
-            self.bb.dist_origin = math.hypot(x, y)
-        else:
-            self.bb.dist_origin = 0
     
     def on_startup(self):
         self.bb = MissionBlackboard(
@@ -123,7 +112,6 @@ class bt_runner(rx.Node):
             f"charge_done={self.bb.charge_done_voltage:.2f} V, "
             f"confirm={self.bb.charge_voltage_confirm_s:.1f} s)"
         )
-        self.dist_origin = None
 
     def _set_charging_arm(self, enabled: bool):
         self.charging_arm_pub.publish(Bool(data=enabled))

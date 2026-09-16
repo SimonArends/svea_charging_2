@@ -36,7 +36,6 @@ class MissionBlackboard:
     mission_phase: str = "transport"
     last_tree_status: str = NodeStatus.RUNNING
     last_running_node: str = "startup"
-    dist_origin: float | None = None
     was_charged: bool = False
     stanley_status: str | None = None
     transport_location: str | None = None
@@ -154,12 +153,6 @@ class ChargingMissionTree:
         return NodeStatus.RUNNING
 
     def allowed_to_charge(self) -> str:
-        # if self.bb.transport_location == "A" or self.bb.transport_location == "B":
-        #     return NodeStatus.SUCCESS
-        #     self.bb.mission_phase = "approach"
-        # self.bb.active_controller = "idle"
-        # self.bb.mission_phase = "charge_not_needed"
-        #return NodeStatus.FAILURE
         if self.bb.charge_permission:
             self.bb.mission_phase = "approach"
             return NodeStatus.SUCCESS

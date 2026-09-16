@@ -17,7 +17,7 @@ from sensor_msgs.msg import CompressedImage, Image
 from std_msgs.msg import Int32MultiArray, String, Float32
 
 from svea_core import rosonic as rx
-
+from svea_core.interfaces import LocalizationInterface
 
 def get_aruco_module():
     if not hasattr(cv2, "aruco"):
@@ -220,7 +220,7 @@ class aruco_camera_test(rx.Node):
     marker_size_px = rx.Parameter(400)
     output = rx.Parameter("aruco_marker.png")
     generate_marker_on_startup = rx.Parameter(False)
-
+    is_sim = rx.Parameter(True)
     image_topic = rx.Parameter("/svea67/image_raw")
     marker_length_m = rx.Parameter(0.05)
     calibration_file = rx.Parameter("")
@@ -231,14 +231,16 @@ class aruco_camera_test(rx.Node):
     use_aruco_detector_api = rx.Parameter(False)
     publish_debug_image = rx.Parameter(False)
     jpeg_quality = rx.Parameter(80)
-    use_coordinate_distance = rx.Parameter(True)
-    coordinate_pose_topic = rx.Parameter("odometry/local")
-    # distance_target_x = rx.Parameter(18.0) ##point close to end of trajectory, not perfect yet
-    # distance_target_y = rx.Parameter(-20.0)
-    # distance_target_x = rx.Parameter(6.3) ##point at beginning of trajectory for testing
-    # distance_target_y = rx.Parameter(-2.3)
-    distance_target_x = rx.Parameter(0.0) ##point at origin for first trajectory.
-    distance_target_y = rx.Parameter(0.0)
+    
+    if is_sim:
+        use_coordinate_distance = rx.Parameter(True)
+        localizer = LocalizationInterface()
+        # distance_target_x = rx.Parameter(18.0) ##point close to end of trajectory, not perfect yet
+        # distance_target_y = rx.Parameter(-20.0)
+        # distance_target_x = rx.Parameter(6.3) ##point at beginning of trajectory for testing
+        # distance_target_y = rx.Parameter(-2.3)
+        distance_target_x = rx.Parameter(0.0) ##point at origin for first trajectory.
+        distance_target_y = rx.Parameter(0.0)
 
     detected_ids_pub = rx.Publisher(Int32MultiArray, "aruco/detected_ids")
     poses_pub = rx.Publisher(PoseArray, "aruco/poses")
@@ -246,28 +248,23 @@ class aruco_camera_test(rx.Node):
     debug_image_pub = rx.Publisher(CompressedImage, "aruco/debug_image/compressed")
     distance_pub = rx.Publisher(Float32, "aruco/distance_m")
 
-    @rx.Subscriber(Odometry, coordinate_pose_topic)
-    def _coordinate_pose_callback(self, msg: Odometry):
-        self.coordinate_x = float(msg.pose.pose.position.x)
-        self.coordinate_y = float(msg.pose.pose.position.y)
-
     def on_startup(self):
         self.bridge = CvBridge()
         self.latest_frame = None
         self._warned_fallback_intrinsics = False
 
         if bool(self.use_coordinate_distance):
-            self.coordinate_x = None
-            self.coordinate_y = None
+            self.coordinate_x = self.localizer.get_x()
+            self.coordinate_y = self.localizer.get_y()
             self.get_logger().info(
                 "Coordinate-distance mode enabled "
-                f"(pose_topic={self.coordinate_pose_topic}, "
                 f"target=({float(self.distance_target_x):.3f}, "
                 f"{float(self.distance_target_y):.3f}))"
             )
             period = 1.0 / max(float(self.loop_hz), 1.0)
             self.create_timer(period, self.loop)
             return
+
 
         try:
             self.get_logger().info("Initializing OpenCV ArUco module...")
@@ -382,6 +379,8 @@ class aruco_camera_test(rx.Node):
 
     def loop(self):
         if bool(self.use_coordinate_distance):
+            self.coordinate_x = self.localizer.get_x()
+            self.coordinate_y = self.localizer.get_y()
             self._publish_coordinate_distance()
             return
 
