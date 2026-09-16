@@ -32,7 +32,7 @@ class battery_simulator(rx.Node):
     battery_full_voltage = rx.Parameter(12.6)
     # 900 mAh = 0.9 Ah
     battery_capacity_ah = rx.Parameter(0.9)
-    battery_charge_current = rx.Parameter(3.0)
+    battery_charge_current = rx.Parameter(1.5)
     battery_discharge_current_stationary = rx.Parameter(-0.9)
     battery_discharge_current_driving = rx.Parameter(-1.8)
 

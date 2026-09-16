@@ -147,6 +147,12 @@ def main(
         ),
     )
 
+    bl.node(
+        "svea_charging",
+        "performance_logger.py",
+        name="performance_logger",
+    )
+
     INITIAL_POSES = {
     "svea_a": (-1.2, 0.0, 1.5, "A", "svea_b"),
     "svea_b": (1.2, 0.0, -1.64, "B", "svea_a"),

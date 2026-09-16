@@ -53,7 +53,7 @@ class automatic_scheduler(rx.Node):
     # Nominal charging current, used to *project* how long a full charge will
     # take before a SVEA is actually plugged in and a real current reading
     # is available for it.
-    charging_current = rx.Parameter(3.0)
+    charging_current = rx.Parameter(1.5)
     charge_done_voltage = rx.Parameter(12.55)
 
     # Battery model constants. These must match the values used by the
