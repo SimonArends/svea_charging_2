@@ -78,7 +78,7 @@ def main(
     bt_dock_distance_m: float = 0.6251276731491089,
     bt_switch_distance_m: float = 1.0, #the aruco is placed right in the charging point (origin) in simulation. An actual aruco would need to be somewhere else.
     bt_docking_exit_distance_m: float = 2.75,
-    bt_charge_start_voltage: float = 12.45, #lower gives more trips in transport mode, if you are close to charge done voltage you might always be charging.
+    bt_charge_start_voltage: float = 9.45, #lower gives more trips in transport mode, if you are close to charge done voltage you might always be charging.
     bt_charge_done_voltage: float = 12.55,
     bt_charge_voltage_confirm_s: float = 3.0,
     stanley_target_velocity: float = 0.48, #gives approx 0.33 velocity commands by the Stanley. Stanley does not reach target. 
@@ -98,7 +98,7 @@ def main(
     map_topic: str = '/map',
     battery_charge_current: float = 19.5,
     battery_discharge_current_stationary: float = -0.9,
-    battery_discharge_current_driving: float = -1.8,
+    battery_discharge_current_driving: float = -18,
 ):
 
     bl = BetterLaunch()
@@ -158,9 +158,16 @@ def main(
         name="performance_logger",
     )
 
+    bl.node(
+        "svea_charging",
+        "signal_logger.py",
+        name="signal_logger",
+    )
+
+
     INITIAL_POSES = {
     "svea_a": (-1.2, 0.0, 1.5, "A", "svea_b"),
-    "svea_b": (1.2, 0.0, -1.64, "B", "svea_a"),
+    #"svea_b": (1.2, 0.0, -1.64, "B", "svea_a"),
     }
 
     for name, (init_x, init_y, init_a, start_loc, other_name) in INITIAL_POSES.items():
