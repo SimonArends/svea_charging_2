@@ -149,7 +149,7 @@ class control_mux(rx.Node):
         if self.is_sim:
             self.actuation.send_control(cmd.steering, cmd.velocity)
         else:
-            self.actuation.send_control(cmd.steering, -cmd.velocity)
+            self.actuation.send_control(cmd.steering, cmd.velocity)
 
     def _get_selected_command(self) -> ControllerCommand:
         active = str(self.active_controller)

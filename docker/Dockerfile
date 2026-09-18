@@ -33,6 +33,7 @@ RUN --mount=type=bind,source=./requirements.txt,target=/tmp/requirements.txt,rea
 RUN --mount=type=bind,source=./src,target=./src,readonly /bin/bash <<EOF
 set -e
 source /opt/svea/$ROSDISTRO/setup.bash
+apt-get update
 rosdep install \
     --rosdistro $ROSDISTRO \
     --from-paths src \

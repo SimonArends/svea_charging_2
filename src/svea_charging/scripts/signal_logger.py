@@ -110,14 +110,14 @@ class signal_logger(rx.Node):
         """Write the latest values to the CSV file."""
         time_since_start = time.monotonic() - self.start_time
 
-        # Don't write a row until all required signals have been received.
-        if (
-            self.steer_control is None
-            or self.drive_control is None
-            or self.battery_current is None
-            or self.battery_voltage is None
-        ):
-            return
+        # # Don't write a row until all required signals have been received.
+        # if (
+        #     self.steer_control is None
+        #     or self.drive_control is None
+        #     or self.battery_current is None
+        #     or self.battery_voltage is None
+        # ):
+        #     return
 
         self.csv_writer.writerow(
             [

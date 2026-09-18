@@ -39,7 +39,7 @@ ROUTE_PRESETS = {
 
 @launch_this
 def main(
-    is_sim: bool = True,
+    is_sim: bool = False,
     name: str = "self",
     enabled: bool = True,
     transport_start_location: str = "A",
@@ -78,12 +78,12 @@ def main(
     bt_dock_distance_m: float = 0.6251276731491089,
     bt_switch_distance_m: float = 1.0, #the aruco is placed right in the charging point (origin) in simulation. An actual aruco would need to be somewhere else.
     bt_docking_exit_distance_m: float = 2.75,
-    bt_charge_start_voltage: float = 9.45, #lower gives more trips in transport mode, if you are close to charge done voltage you might always be charging.
+    bt_charge_start_voltage: float = 9.4, #lower gives more trips in transport mode, if you are close to charge done voltage you might always be charging.
     bt_charge_done_voltage: float = 12.55,
     bt_charge_voltage_confirm_s: float = 3.0,
     stanley_target_velocity: float = 0.48, #gives approx 0.33 velocity commands by the Stanley. Stanley does not reach target. 
-    stanley_turn_velocity: float = 0.3, 
-    stanley_max_steering_rad: float = 0.35, #something to adjust?
+    stanley_turn_velocity: float = 0.48, 
+    stanley_max_steering_rad: float = 0.45, #something to adjust?
     control_mux_timeout_s: float = 1.0,
     camera_video_device: str = "/dev/video0",
     apply_camera_v4l2_fix: bool = False,
@@ -94,7 +94,7 @@ def main(
     # Map
     use_map: bool = True,
     map_pkg: str = 'svea_core',
-    map_name: str = 'floor2',
+    map_name: str = 'sml',
     map_topic: str = '/map',
     battery_charge_current: float = 19.5,
     battery_discharge_current_stationary: float = -0.9,
@@ -164,6 +164,11 @@ def main(
         name="signal_logger",
     )
 
+    bl.include(
+        "svea_mocap",
+        "mocap.launch.py",
+    )
+
 
     INITIAL_POSES = {
     "svea_a": (-1.2, 0.0, 1.5, "A", "svea_b"),
@@ -177,18 +182,19 @@ def main(
             "svea.launch.py",
             name=name,
             is_sim=is_sim,
-            is_indoor=False,
+            is_indoor=True,
             initial_pose_x=init_x,
             initial_pose_y=init_y,
             initial_pose_a=init_a,
-            use_localization=True,
+            use_localization=False,
             use_map=False,
             map_name = map_name, #the digital cylinders are launched in "floor2", the rest is not used.
-            use_rtk=use_gps,
-            rtk_device=rtk_device,
-            rtk_baud=rtk_baud,
-            rtk_username=rtk_username,
-            rtk_password=rtk_password,
+            # RTK-GPS Settings
+            use_rtk = True,
+            rtk_device = '/dev/ttyACM1',
+            rtk_baud = 115200,
+            rtk_username = '',
+            rtk_password = '',
             use_datum=use_datum,
             datum_service="datum",
             datum_file=datum_file,
