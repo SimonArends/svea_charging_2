@@ -75,11 +75,11 @@ def main(
     aruco_focal_length_px: float = -1.0,
     docking_target_velocity: float = 0.09,
     dock_target_angle_deg: float = 85.0,
-    bt_dock_distance_m: float = 0.6251276731491089,
-    bt_switch_distance_m: float = 1.0, #the aruco is placed right in the charging point (origin) in simulation. An actual aruco would need to be somewhere else.
-    bt_docking_exit_distance_m: float = 2.75,
-    bt_charge_start_voltage: float = 9.4, #lower gives more trips in transport mode, if you are close to charge done voltage you might always be charging.
-    bt_charge_done_voltage: float = 12.55,
+    bt_dock_distance_m: float = 0.62,
+    bt_switch_distance_m: float = 1.9, #the aruco is placed right in the charging point (origin) in simulation. An actual aruco would need to be somewhere else.
+    bt_docking_exit_distance_m: float = 2.3,
+    bt_charge_start_voltage: float = 11.36, #lower gives more trips in transport mode, if you are close to charge done voltage you might always be charging.
+    bt_charge_done_voltage: float = 11.48,
     bt_charge_voltage_confirm_s: float = 3.0,
     stanley_target_velocity: float = 0.48, #gives approx 0.33 velocity commands by the Stanley. Stanley does not reach target. 
     stanley_turn_velocity: float = 0.48, 
@@ -158,11 +158,11 @@ def main(
         name="performance_logger",
     )
 
-    bl.node(
-        "svea_charging",
-        "signal_logger.py",
-        name="signal_logger",
-    )
+    # bl.node(
+    #     "svea_charging",
+    #     "signal_logger.py",
+    #     name="signal_logger",
+    # )
 
     bl.include(
         "svea_mocap",
@@ -319,24 +319,37 @@ def main(
                     **{"localization/base_frame": f"{name}/base_link"},
                 ),
             )
-
-            bl.node(
-                "svea_charging",
-                "cylinder_docking.py",
-                name="cylinder_docking",
-                params={
-                    "scan_topic": "scan",
-                    "target_velocity": docking_target_velocity,
-                    "dock_target_angle_deg": dock_target_angle_deg,
-                    "localization/base_frame": f"{name}/base_link",
-                },
-            )
+            if is_sim:
+                bl.node(
+                    "svea_charging",
+                    "cylinder_docking.py",
+                    name="cylinder_docking",
+                    params={
+                        "scan_topic": "scan",
+                        "target_velocity": docking_target_velocity,
+                        "dock_target_angle_deg": dock_target_angle_deg,
+                        "localization/base_frame": f"{name}/base_link",
+                    },
+                )
+            else:
+                bl.node(
+                    "svea_charging",
+                    "line_follower.py",
+                    name="line_follower",
+                    params=dict(
+                        use_rviz=use_foxglove,
+                        is_sim=is_sim,
+                        image_topic=camera_image_topic,
+                        aruco_stop_distance_m=bt_dock_distance_m,
+                    ),
+                )
 
             bl.node(
                 "svea_charging",
                 "bt_runner.py",
                 name="bt_runner",
                 params=dict(
+                    is_sim=is_sim,
                     switch_distance_m=bt_switch_distance_m,
                     docking_exit_distance_m=bt_docking_exit_distance_m,
                     charge_start_voltage=bt_charge_start_voltage,

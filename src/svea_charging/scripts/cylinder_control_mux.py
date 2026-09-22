@@ -13,7 +13,7 @@ from rclpy.qos import (
 
 from svea_core import rosonic as rx
 from svea_core.interfaces import ActuationInterface
-from svea_core.interfaces import LocalizationInterface
+#from svea_core.interfaces import LocalizationInterface
 
 qos_pubber = QoSProfile(
     reliability=QoSReliabilityPolicy.RELIABLE,
@@ -40,7 +40,7 @@ class control_mux(rx.Node):
     charging_arm_topic = rx.Parameter("charging_arm")
     charging_arm_active_xtr1 = rx.Parameter(100.0)
     charging_arm_inactive_xtr1 = rx.Parameter(0.0)
-    localizer = LocalizationInterface()
+    #localizer = LocalizationInterface()
     actuation = ActuationInterface()
 
     def _other_region_cb(self, msg: String):
@@ -58,6 +58,17 @@ class control_mux(rx.Node):
             # I entered first -> I keep going
             else:
                 self.waiting = False
+
+    @rx.Subscriber(Odometry, "/svea3/odom")
+    def _odometry_cb(self, msg: Odometry):
+        x = float(msg.pose.pose.position.y)
+        y = -float(msg.pose.pose.position.x)
+
+        new_region = self.get_regions(x, y)
+
+        if new_region != self.region:
+            self.region = new_region
+            self.region_entry_time = self._now_s()
 
     @rx.Subscriber(String, "mission/active_controller", qos_pubber)
     def _active_controller_cb(self, msg: String):
@@ -87,6 +98,16 @@ class control_mux(rx.Node):
         self.cylinder_cmd.velocity = float(msg.data)
         self.cylinder_cmd.stamp_s = self._now_s()
 
+    @rx.Subscriber(Float32, "line_follower/cmd_steering_rad", qos_pubber)
+    def _line_steering_cb(self, msg: Float32):
+        self.line_cmd.steering = float(msg.data)
+        self.line_cmd.stamp_s = self._now_s()
+
+    @rx.Subscriber(Float32, "line_follower/cmd_velocity_mps", qos_pubber)
+    def _line_velocity_cb(self, msg: Float32):
+        self.line_cmd.velocity = float(msg.data)
+        self.line_cmd.stamp_s = self._now_s()
+
     def on_startup(self):
         self.region = ""
         self.other_region = ""
@@ -97,6 +118,7 @@ class control_mux(rx.Node):
         self.waiting = False
         self.stanley_cmd = ControllerCommand()
         self.cylinder_cmd = ControllerCommand()
+        self.line_cmd = ControllerCommand()
         self.charging_arm_enabled = False
 
         region_topic = f"/{self.name_svea}/region"
@@ -121,14 +143,14 @@ class control_mux(rx.Node):
         self.get_logger().info("Control mux started")
 
     def loop(self):
-        x = self.localizer.get_x()
-        y = self.localizer.get_y()
+        # x = self.localizer.get_x()
+        # y = self.localizer.get_y()
 
-        new_region = self.get_regions(x, y)
+        # new_region = self.get_regions(x, y)
 
-        if new_region != self.region:
-            self.region = new_region
-            self.region_entry_time = self._now_s()
+        # if new_region != self.region:
+        #     self.region = new_region
+        #     self.region_entry_time = self._now_s()
 
         data = f"{self.region}|{self.region_entry_time}"
         self.region_pub.publish(String(data=data))
@@ -159,6 +181,8 @@ class control_mux(rx.Node):
             return self._validated_command(self.stanley_cmd)
         if active == "cylinder_docking":
             return self._validated_command(self.cylinder_cmd)
+        if active == "line_follower":
+            return self._validated_command(self.line_cmd)
         if active == "post_stanley":
             return self._validated_command(self.stanley_cmd)
         return ControllerCommand()

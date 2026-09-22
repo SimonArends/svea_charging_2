@@ -13,13 +13,18 @@ from rclpy.qos import (
     QoSReliabilityPolicy,
 )
 
+bat_pubber = QoSProfile(
+    reliability=QoSReliabilityPolicy.BEST_EFFORT,
+    durability=QoSDurabilityPolicy.VOLATILE,
+    history=QoSHistoryPolicy.KEEP_LAST,
+    depth=1,
+)
 qos_pubber = QoSProfile(
     reliability=QoSReliabilityPolicy.RELIABLE,
     durability=QoSDurabilityPolicy.VOLATILE,
     history=QoSHistoryPolicy.KEEP_LAST,
     depth=1,
 )
-
 
 class performance_logger(rx.Node):
     # Current above this value is treated as actual charging.
@@ -38,11 +43,11 @@ class performance_logger(rx.Node):
     performance_pub = rx.Publisher(String, "/mission/performance", qos_pubber)
 
     # --- Subscribers -----------------------------------------------
-    @rx.Subscriber(BatteryState, battery_charging_topic_a, qos_pubber)
+    @rx.Subscriber(BatteryState, battery_charging_topic_a, bat_pubber)
     def _battery_charging_cb_a(self, msg: BatteryState):
         self.battery_current_a = float(msg.current)
 
-    @rx.Subscriber(BatteryState, battery_charging_topic_b, qos_pubber)
+    @rx.Subscriber(BatteryState, battery_charging_topic_b, bat_pubber)
     def _battery_charging_cb_b(self, msg: BatteryState):
         self.battery_current_b = float(msg.current)
 

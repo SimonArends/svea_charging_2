@@ -6,9 +6,9 @@ def main(
     name: str = 'self',
     is_sim: bool = False,
     is_indoor: bool = False,
-    initial_pose_x: float = -1.2,#-5.0,
+    initial_pose_x: float = 0.0,#-5.0,
     initial_pose_y: float = 0.0,#-2.0,
-    initial_pose_a: float = 0.0, # Yaw Angle
+    initial_pose_a: float = 2.548, # Yaw Angle
     ## Localization Settings
     use_localization: bool = True,
     ## Map

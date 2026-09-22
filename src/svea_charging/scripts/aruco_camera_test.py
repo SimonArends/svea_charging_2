@@ -220,7 +220,7 @@ class aruco_camera_test(rx.Node):
     marker_size_px = rx.Parameter(400)
     output = rx.Parameter("aruco_marker.png")
     generate_marker_on_startup = rx.Parameter(False)
-    is_sim = rx.Parameter(True)
+    is_sim = rx.Parameter(False)
     image_topic = rx.Parameter("/svea67/image_raw")
     marker_length_m = rx.Parameter(0.05)
     calibration_file = rx.Parameter("")
@@ -231,16 +231,17 @@ class aruco_camera_test(rx.Node):
     use_aruco_detector_api = rx.Parameter(False)
     publish_debug_image = rx.Parameter(False)
     jpeg_quality = rx.Parameter(80)
+    #use_coordinate_distance = rx.Parameter(False)
     
-    if is_sim:
-        use_coordinate_distance = rx.Parameter(True)
-        localizer = LocalizationInterface()
-        # distance_target_x = rx.Parameter(18.0) ##point close to end of trajectory, not perfect yet
-        # distance_target_y = rx.Parameter(-20.0)
-        # distance_target_x = rx.Parameter(6.3) ##point at beginning of trajectory for testing
-        # distance_target_y = rx.Parameter(-2.3)
-        distance_target_x = rx.Parameter(0.0) ##point at origin for first trajectory.
-        distance_target_y = rx.Parameter(0.0)
+    #if is_sim:
+        #use_coordinate_distance = rx.Parameter(True)
+    localizer = LocalizationInterface()
+    # distance_target_x = rx.Parameter(18.0) ##point close to end of trajectory, not perfect yet
+    # distance_target_y = rx.Parameter(-20.0)
+    # distance_target_x = rx.Parameter(6.3) ##point at beginning of trajectory for testing
+    # distance_target_y = rx.Parameter(-2.3)
+    distance_target_x = rx.Parameter(0.0) ##point at origin for first trajectory.
+    distance_target_y = rx.Parameter(0.0)
 
     detected_ids_pub = rx.Publisher(Int32MultiArray, "aruco/detected_ids")
     poses_pub = rx.Publisher(PoseArray, "aruco/poses")
@@ -252,6 +253,7 @@ class aruco_camera_test(rx.Node):
         self.bridge = CvBridge()
         self.latest_frame = None
         self._warned_fallback_intrinsics = False
+        self.use_coordinate_distance = bool(self.is_sim)
 
         if bool(self.use_coordinate_distance):
             self.coordinate_x = self.localizer.get_x()

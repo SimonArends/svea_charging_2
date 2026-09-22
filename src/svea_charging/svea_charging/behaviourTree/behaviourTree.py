@@ -41,6 +41,7 @@ class MissionBlackboard:
     transport_location: str | None = None
     need_charging: bool = False
     charge_permission: bool = False
+    is_sim: bool = False
 
 
 
@@ -128,7 +129,7 @@ class ChargingMissionTree:
 
     def is_near_docking_zone(self) -> str:
         distance = self.bb.aruco_distance
-        if self.bb.active_controller == "cylinder_docking":
+        if self.bb.active_controller == "cylinder_docking" or self.bb.active_controller == "line_follower":
             if distance is None or distance <= self.bb.docking_exit_distance_m:
                 self.bb.mission_phase = "docking"
                 return NodeStatus.SUCCESS
@@ -169,15 +170,26 @@ class ChargingMissionTree:
         return NodeStatus.FAILURE
 
     def run_line_follower_docking(self) -> str:
-        self.bb.active_controller = "cylinder_docking"
+        if self.bb.is_sim:
+            self.bb.active_controller = "cylinder_docking"
+        else:
+            self.bb.active_controller = "line_follower"
         self.bb.mission_phase = "docking"
 
-        if self.bb.charger_visible:# and self.bb.line_visible:
-            if self.bb.aruco_distance is not None and self.bb.aruco_distance <= .91:
-                self.set_charging_arm(True)
-            else:
-                self.set_charging_arm(False)
-            return NodeStatus.RUNNING
+        if self.bb.is_sim:
+            if self.bb.charger_visible:
+                if self.bb.aruco_distance is not None and self.bb.aruco_distance <= .91:
+                    self.set_charging_arm(True)
+                else:
+                    self.set_charging_arm(False)
+                return NodeStatus.RUNNING
+        else:
+            if self.bb.charger_visible and self.bb.line_visible:
+                if self.bb.aruco_distance is not None and self.bb.aruco_distance <= .91:
+                    self.set_charging_arm(True)
+                else:
+                    self.set_charging_arm(False)
+                return NodeStatus.RUNNING
 
         self.set_charging_arm(False)
         return NodeStatus.FAILURE

@@ -66,8 +66,8 @@ class LineFollowerLocalizationInterface(LocalizationInterface):
 class line_follower(rx.Node):
     dt = rx.Parameter(0.05)
     image_topic = rx.Parameter("/svea67/image_raw")
-    target_velocity = rx.Parameter(0.26)
-    max_velocity = rx.Parameter(0.4)
+    target_velocity = rx.Parameter(0.19)
+    max_velocity = rx.Parameter(0.3)
     stop_on_lost_line = rx.Parameter(True)
     controller_name = rx.Parameter("line_follower")
     active_controller = rx.Parameter('idle')
@@ -124,9 +124,9 @@ class line_follower(rx.Node):
     aruco_velocity_ki = rx.Parameter(0.03)
     aruco_velocity_kd = rx.Parameter(0.0)
     aruco_velocity_integral_limit = rx.Parameter(0.3)
-    aruco_max_backup_velocity = rx.Parameter(0.3)
-    aruco_min_forward_command = rx.Parameter(0.25)
-    aruco_min_backup_command = rx.Parameter(0.3)
+    aruco_max_backup_velocity = rx.Parameter(0.4)
+    aruco_min_forward_command = rx.Parameter(0.18)
+    aruco_min_backup_command = rx.Parameter(0.4)
     # Must exceed dock_settle_time_s to actually take effect — see
     # _change_dock_search_direction(), which waits
     # max(dock_settle_time_s, reverse_neutral_time_s) before reversing.

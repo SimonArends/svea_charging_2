@@ -38,6 +38,7 @@ class bt_runner(rx.Node):
     charge_done_voltage = rx.Parameter(12.6)
     charge_voltage_confirm_s = rx.Parameter(3.0)
     charging_arm_topic = rx.Parameter("charging_arm")
+    is_sim = rx.Parameter(False)
 
     dist_to_goal_topic = rx.Parameter("dist_to_goal")
     aruco_distance_topic = rx.Parameter("aruco/distance_m")

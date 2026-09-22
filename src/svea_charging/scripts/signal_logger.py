@@ -4,139 +4,276 @@ import csv
 import time
 from pathlib import Path
 
-import svea_core.rosonic as rx
-
-from sensor_msgs.msg import BatteryState
-from mavros_msgs.msg import ManualControl
-
+import rclpy
+from rclpy.node import Node
 from rclpy.qos import (
     QoSDurabilityPolicy,
     QoSHistoryPolicy,
     QoSProfile,
     QoSReliabilityPolicy,
+    qos_profile_sensor_data,
 )
 
+from geometry_msgs.msg import TwistWithCovarianceStamped
+from sensor_msgs.msg import BatteryState
+from sensor_msgs.msg import NavSatFix
 
-qos_pubber = QoSProfile(
-    reliability=QoSReliabilityPolicy.RELIABLE,
+
+# Battery QoS
+qos_bat = QoSProfile(
+    reliability=QoSReliabilityPolicy.BEST_EFFORT,
     durability=QoSDurabilityPolicy.VOLATILE,
     history=QoSHistoryPolicy.KEEP_LAST,
     depth=1,
 )
 
 
-class signal_logger(rx.Node):
-    """
-    Logs driving/steering inputs and battery measurements to a CSV file.
+class SignalLogger(Node):
 
-    ManualControl:
-        y = steering input
-        z = driving input
+    def __init__(self):
+        super().__init__("signal_logger")
 
-    Logged at a fixed rate, independently of the rate at which the
-    input/battery messages arrive.
-    """
+        # ---------------------------------------------------------
+        # Parameters
+        # ---------------------------------------------------------
 
-    battery_topic = rx.Parameter("/svea_a/mavros/battery")
-    drive_control_topic = rx.Parameter("/svea_a/mavros/manual_control/send")
-    update_rate = rx.Parameter(5.0)
+        self.declare_parameter(
+            "battery_topic",
+            "/svea_a/mavros/battery",
+        )
 
-    @rx.Subscriber(ManualControl, drive_control_topic, qos_pubber)
-    def manual_control_cb(self, msg):
-        """
-        Receive manual driving and steering inputs.
+        self.declare_parameter(
+            "wheel_odom_topic",
+            "/svea_a/mavros/wheel_odometry/velocity",
+        )
 
-        MAVROS ManualControl:
-            y = steering
-            z = throttle / driving
-        """
-        self.steer_control = float(msg.y)
-        self.drive_control = float(msg.z)
+        self.declare_parameter(
+            "gps_topic",
+            "/svea_a/gps/fix",
+        )
 
-    @rx.Subscriber(BatteryState, battery_topic, qos_pubber)
-    def battery_cb(self, msg: BatteryState):
-        """Receive battery voltage and current."""
-        self.battery_current = float(msg.current)
-        self.battery_voltage = float(msg.voltage)
+        self.declare_parameter(
+            "update_rate",
+            0.2,
+        )
 
-    def on_startup(self):
-        # Latest received values.
-        self.steer_control = None
-        self.drive_control = None
+        battery_topic = self.get_parameter(
+            "battery_topic"
+        ).value
+
+        wheel_odom_topic = self.get_parameter(
+            "wheel_odom_topic"
+        ).value
+
+        gps_topic = self.get_parameter(
+            "gps_topic"
+        ).value
+
+        update_rate = float(
+            self.get_parameter("update_rate").value
+        )
+
+        # ---------------------------------------------------------
+        # Latest received values
+        # ---------------------------------------------------------
+
         self.battery_current = None
         self.battery_voltage = None
+        self.velocity = None
 
-        # Monotonic clock is appropriate for measuring elapsed time.
+        self.latitude = None
+        self.longitude = None
+
+        # ---------------------------------------------------------
+        # Subscribers
+        # ---------------------------------------------------------
+
+        self.battery_sub = self.create_subscription(
+            BatteryState,
+            battery_topic,
+            self.battery_cb,
+            qos_bat,
+        )
+
+        self.velocity_sub = self.create_subscription(
+            TwistWithCovarianceStamped,
+            wheel_odom_topic,
+            self.velocity_cb,
+            qos_profile_sensor_data,
+        )
+
+        self.gps_sub = self.create_subscription(
+            NavSatFix,
+            gps_topic,
+            self.gps_cb,
+            qos_profile_sensor_data,
+        )
+
+        # ---------------------------------------------------------
+        # Timing
+        # ---------------------------------------------------------
+
         self.start_time = time.monotonic()
 
-        # Create output directory.
+        period = 1.0 / update_rate
+
+        self.timer = self.create_timer(
+            period,
+            self.loop,
+        )
+
+        # ---------------------------------------------------------
+        # CSV setup
+        # ---------------------------------------------------------
+
         self.log_dir = Path("/svea_ws/src/svea_logs")
-        self.log_dir.mkdir(parents=True, exist_ok=True)
+        self.log_dir.mkdir(
+            parents=True,
+            exist_ok=True,
+        )
 
-        # Create a unique filename based on wall-clock time.
         timestamp = time.strftime("%Y%m%d_%H%M%S")
-        self.log_path = self.log_dir / f"signals_{timestamp}.csv"
 
-        # Open CSV file.
+        self.log_path = (
+            self.log_dir
+            / f"signals_{timestamp}.csv"
+        )
+
         self.log_file = open(
             self.log_path,
             "w",
             newline="",
-            buffering=1,  # line buffered
+            buffering=1,
         )
 
-        self.csv_writer = csv.writer(self.log_file)
+        self.csv_writer = csv.writer(
+            self.log_file
+        )
 
-        # CSV header.
         self.csv_writer.writerow(
             [
                 "time_since_start_s",
                 "battery_voltage_V",
                 "battery_current_A",
-                "steering_input",
-                "driving_input",
+                "velocity_mps",
+                "latitude_deg",
+                "longitude_deg",
             ]
         )
 
-        # Log at the requested rate.
-        period = 1.0 / float(self.update_rate)
-        self.create_timer(period, self.loop)
+        # ---------------------------------------------------------
+        # Startup logging
+        # ---------------------------------------------------------
 
         self.get_logger().info(
-            f"Signal logger started. Writing to {self.log_path}"
+            f"Signal logger started. "
+            f"Writing to {self.log_path}"
         )
 
-    def loop(self):
-        """Write the latest values to the CSV file."""
-        time_since_start = time.monotonic() - self.start_time
+        self.get_logger().info(
+            f"Battery topic: {battery_topic}"
+        )
 
-        # # Don't write a row until all required signals have been received.
-        # if (
-        #     self.steer_control is None
-        #     or self.drive_control is None
-        #     or self.battery_current is None
-        #     or self.battery_voltage is None
-        # ):
-        #     return
+        self.get_logger().info(
+            f"Wheel odometry topic: {wheel_odom_topic}"
+        )
+
+        self.get_logger().info(
+            f"GPS topic: {gps_topic}"
+        )
+
+    # -------------------------------------------------------------
+    # Battery callback
+    # -------------------------------------------------------------
+
+    def battery_cb(self, msg: BatteryState):
+        self.battery_current = float(msg.current)
+        self.battery_voltage = float(msg.voltage)
+
+    # -------------------------------------------------------------
+    # Velocity callback
+    # -------------------------------------------------------------
+
+    def velocity_cb(
+        self,
+        msg: TwistWithCovarianceStamped,
+    ):
+        self.velocity = float(
+            msg.twist.twist.linear.x
+        )
+
+    # -------------------------------------------------------------
+    # GPS callback
+    # -------------------------------------------------------------
+
+    def gps_cb(self, msg: NavSatFix):
+        self.latitude = float(msg.latitude)
+        self.longitude = float(msg.longitude)
+
+    # -------------------------------------------------------------
+    # Logging loop
+    # -------------------------------------------------------------
+
+    def loop(self):
+
+        time_since_start = (
+            time.monotonic() - self.start_time
+        )
 
         self.csv_writer.writerow(
             [
                 f"{time_since_start:.3f}",
-                f"{self.battery_voltage:.3f}",
-                f"{self.battery_current:.3f}",
-                f"{self.steer_control:.6f}",
-                f"{self.drive_control:.6f}",
+
+                "" if self.battery_voltage is None
+                else f"{self.battery_voltage:.3f}",
+
+                "" if self.battery_current is None
+                else f"{self.battery_current:.3f}",
+
+                "" if self.velocity is None
+                else f"{self.velocity:.6f}",
+
+                "" if self.latitude is None
+                else f"{self.latitude:.8f}",
+
+                "" if self.longitude is None
+                else f"{self.longitude:.8f}",
             ]
         )
 
-    def on_shutdown(self):
-        """Close the log file cleanly."""
-        if hasattr(self, "log_file") and self.log_file:
+    # -------------------------------------------------------------
+    # Shutdown
+    # -------------------------------------------------------------
+
+    def destroy_node(self):
+
+        self.get_logger().info(
+            "Signal logger stopped."
+        )
+
+        if hasattr(self, "log_file"):
             self.log_file.flush()
             self.log_file.close()
 
-        self.get_logger().info("Signal logger stopped.")
+        super().destroy_node()
+
+
+def main(args=None):
+
+    rclpy.init(args=args)
+
+    node = SignalLogger()
+
+    try:
+        rclpy.spin(node)
+
+    except KeyboardInterrupt:
+        pass
+
+    finally:
+        node.destroy_node()
+        rclpy.shutdown()
 
 
 if __name__ == "__main__":
-    signal_logger.main()
+    main()

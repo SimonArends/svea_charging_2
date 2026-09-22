@@ -45,7 +45,12 @@ qos_pubber = QoSProfile(
     history=QoSHistoryPolicy.KEEP_LAST,
     depth=1,
 )
-
+bat_pubber = QoSProfile(
+    reliability=QoSReliabilityPolicy.BEST_EFFORT,
+    durability=QoSDurabilityPolicy.VOLATILE,
+    history=QoSHistoryPolicy.KEEP_LAST,
+    depth=1,
+)
 
 class automatic_scheduler(rx.Node):
 
@@ -101,11 +106,11 @@ class automatic_scheduler(rx.Node):
     def _location_b(self, msg: String):
         self.location_b = msg.data
 
-    @rx.Subscriber(BatteryState, battery_charging_topic_a, qos_pubber)
+    @rx.Subscriber(BatteryState, battery_charging_topic_a, bat_pubber)
     def _battery_charging_cb_a(self, msg: BatteryState):
         self.battery_current_a = float(msg.current)
         self.battery_voltage_a = float(msg.voltage)
-    @rx.Subscriber(BatteryState, battery_charging_topic_b, qos_pubber)
+    @rx.Subscriber(BatteryState, battery_charging_topic_b, bat_pubber)
     def _battery_charging_cb_b(self, msg: BatteryState):
         self.battery_current_b = float(msg.current)
         self.battery_voltage_b = float(msg.voltage)
