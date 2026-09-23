@@ -99,6 +99,7 @@ class bt_runner(rx.Node):
             charge_start_voltage=float(self.charge_start_voltage),
             charge_done_voltage=float(self.charge_done_voltage),
             charge_voltage_confirm_s=float(self.charge_voltage_confirm_s),
+            is_sim=bool(self.is_sim),
         )
         self.tree = ChargingMissionTree(self.bb, self._set_charging_arm)
         self._set_charging_arm(False)

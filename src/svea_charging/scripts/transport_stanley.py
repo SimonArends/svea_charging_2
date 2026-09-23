@@ -31,8 +31,21 @@ from visualization_msgs.msg import Marker
 from svea_charging.controllers.stanleyController import StanleyController
 from svea_core import rosonic as rx
 #from svea_core.interfaces import LocalizationInterface
+from rclpy.qos import (
+    QoSDurabilityPolicy,
+    QoSHistoryPolicy,
+    QoSProfile,
+    QoSReliabilityPolicy,
+)
+qos_pubber = QoSProfile(
+    reliability=QoSReliabilityPolicy.RELIABLE,
+    durability=QoSDurabilityPolicy.VOLATILE,
+    history=QoSHistoryPolicy.KEEP_LAST,
+    depth=1,
+)
 
 class OutdoorStanley(rx.Node):
+    is_sim = rx.Parameter(True)
     update_hz = rx.Parameter(20.0)
     enabled = rx.Parameter(False)
     target_velocity = rx.Parameter(0.28)
@@ -98,24 +111,24 @@ class OutdoorStanley(rx.Node):
     waypoints_pub = rx.Publisher(Marker, "outdoor_stanley/waypoints_marker")
     traj_pub = rx.Publisher(Marker, "outdoor_stanley/traj_marker")
 
-    @rx.Subscriber(Odometry, odometry_topic)
-    def _odometry_cb(self, msg: Odometry):
-        q = msg.pose.pose.orientation
-        odom_yaw = euler_from_quaternion([q.x, q.y, q.z, q.w])[2] - math.pi/2
-        odom_yaw = math.atan2(math.sin(odom_yaw), math.cos(odom_yaw))  # wrap to [-pi, pi]
-        x = float(msg.pose.pose.position.y)
-        y = -float(msg.pose.pose.position.x)
-        yaw = self._heading_from_course(x, y, odom_yaw) + 0*1.57
-        self.state = (
-            x,
-            y,
-            float(yaw),
-            float(msg.twist.twist.linear.x),
-        )
-        self.last_odom_s = self._now_s()
-        samples = getattr(self, "settle_samples", None)
-        if samples is not None and not getattr(self, "path_ready", False):
-            samples.append((self.last_odom_s, self.state[0], self.state[1]))
+    # @rx.Subscriber(Odometry, odometry_topic)
+    # def _odometry_cb(self, msg: Odometry):
+    #     q = msg.pose.pose.orientation
+    #     odom_yaw = euler_from_quaternion([q.x, q.y, q.z, q.w])[2] - math.pi/2
+    #     odom_yaw = math.atan2(math.sin(odom_yaw), math.cos(odom_yaw))  # wrap to [-pi, pi]
+    #     x = float(msg.pose.pose.position.y)
+    #     y = -float(msg.pose.pose.position.x)
+    #     yaw = self._heading_from_course(x, y, odom_yaw) + 0*1.57
+    #     self.state = (
+    #         x,
+    #         y,
+    #         float(yaw),
+    #         float(msg.twist.twist.linear.x),
+    #     )
+    #     self.last_odom_s = self._now_s()
+    #     samples = getattr(self, "settle_samples", None)
+    #     if samples is not None and not getattr(self, "path_ready", False):
+    #         samples.append((self.last_odom_s, self.state[0], self.state[1]))
 
     @rx.Subscriber(NavSatFix, gps_topic, qos_profile=qos_profile_sensor_data)
     def _gps_cb(self, msg: NavSatFix):
@@ -145,6 +158,20 @@ class OutdoorStanley(rx.Node):
 
     def on_startup(self):
         #self.state = self.localizer.get_state()
+        if self.is_sim:
+            self.sim_odom_sub = self.create_subscription(
+                Odometry,
+                "odometry/local",
+                self.odom_sim_cb,
+                qos_pubber,
+            )
+        else:
+            self.odom_sub = self.create_subscription(
+                Odometry,
+                "/svea_3/odom",
+                self.odom_cb,
+                qos_pubber,
+            )
         self.state = None
         self.last_odom_s = None
         self.last_gps_s = None
@@ -227,6 +254,42 @@ class OutdoorStanley(rx.Node):
             f"Route toward {destination} initialized with {len(self.waypoints)} "
             f"waypoints; goal=({self.goal[0]:.2f}, {self.goal[1]:.2f}) in map"
         )
+
+    def odom_sim_cb(self, msg: Odometry):
+        q = msg.pose.pose.orientation
+        odom_yaw = euler_from_quaternion([q.x, q.y, q.z, q.w])[2] - math.pi/2*0
+        #odom_yaw = math.atan2(math.sin(odom_yaw), math.cos(odom_yaw))  # wrap to [-pi, pi]
+        x = float(msg.pose.pose.position.x)
+        y = float(msg.pose.pose.position.y)
+        yaw = self._heading_from_course(x, y, odom_yaw)
+        self.state = (
+            x,
+            y,
+            float(yaw),
+            float(msg.twist.twist.linear.x),
+        )
+        self.last_odom_s = self._now_s()
+        samples = getattr(self, "settle_samples", None)
+        if samples is not None and not getattr(self, "path_ready", False):
+            samples.append((self.last_odom_s, self.state[0], self.state[1]))
+
+    def odom_cb(self, msg: Odometry):
+        q = msg.pose.pose.orientation
+        odom_yaw = euler_from_quaternion([q.x, q.y, q.z, q.w])[2] - math.pi/2
+        odom_yaw = math.atan2(math.sin(odom_yaw), math.cos(odom_yaw))  # wrap to [-pi, pi]
+        x = float(msg.pose.pose.position.y)
+        y = -float(msg.pose.pose.position.x)
+        yaw = self._heading_from_course(x, y, odom_yaw)
+        self.state = (
+            x,
+            y,
+            float(yaw),
+            float(msg.twist.twist.linear.x),
+        )
+        self.last_odom_s = self._now_s()
+        samples = getattr(self, "settle_samples", None)
+        if samples is not None and not getattr(self, "path_ready", False):
+            samples.append((self.last_odom_s, self.state[0], self.state[1]))
 
     def loop(self):
         # self.state = self.localizer.get_state()

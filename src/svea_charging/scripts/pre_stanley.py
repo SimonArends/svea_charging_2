@@ -75,23 +75,23 @@ class OutdoorStanley(rx.Node):
     waypoints_pub = rx.Publisher(Marker, "outdoor_stanley/waypoints_marker")
     traj_pub = rx.Publisher(Marker, "outdoor_stanley/traj_marker")
 
-    @rx.Subscriber(Odometry, odometry_topic)
-    def _odometry_cb(self, msg: Odometry):
-        q = msg.pose.pose.orientation
-        odom_yaw = euler_from_quaternion([q.x, q.y, q.z, q.w])[2]
-        x = float(msg.pose.pose.position.x)
-        y = float(msg.pose.pose.position.y)
-        yaw = self._heading_from_course(x, y, odom_yaw)
-        self.state = (
-            x,
-            y,
-            float(yaw),
-            float(msg.twist.twist.linear.x),
-        )
-        self.last_odom_s = self._now_s()
-        samples = getattr(self, "settle_samples", None)
-        if samples is not None and not getattr(self, "path_ready", False):
-            samples.append((self.last_odom_s, self.state[0], self.state[1]))
+    # @rx.Subscriber(Odometry, odometry_topic)
+    # def _odometry_cb(self, msg: Odometry):
+    #     q = msg.pose.pose.orientation
+    #     odom_yaw = euler_from_quaternion([q.x, q.y, q.z, q.w])[2]
+    #     x = float(msg.pose.pose.position.x)
+    #     y = float(msg.pose.pose.position.y)
+    #     yaw = self._heading_from_course(x, y, odom_yaw)
+    #     self.state = (
+    #         x,
+    #         y,
+    #         float(yaw),
+    #         float(msg.twist.twist.linear.x),
+    #     )
+    #     self.last_odom_s = self._now_s()
+    #     samples = getattr(self, "settle_samples", None)
+    #     if samples is not None and not getattr(self, "path_ready", False):
+    #         samples.append((self.last_odom_s, self.state[0], self.state[1]))
 
     @rx.Subscriber(NavSatFix, gps_topic, qos_profile=qos_profile_sensor_data)
     def _gps_cb(self, msg: NavSatFix):

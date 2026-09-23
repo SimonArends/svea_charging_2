@@ -171,17 +171,17 @@ def main(
         )
 
     INITIAL_POSES = {
-    "svea_a": (-1.2, 0.0, 1.5, "A", "svea_b"),
-    #"svea_b": (1.2, 0.0, -1.64, "B", "svea_a"),
+    "svea_a": (-1.2, 0.0, 1.5, "A", "svea_b", False, 1.9),
+    "svea_b": (1.2, 0.0, -1.64, "B", "svea_a", True, 1.0),
     }
 
-    for name, (init_x, init_y, init_a, start_loc, other_name) in INITIAL_POSES.items():
+    for name, (init_x, init_y, init_a, start_loc, other_name, sim, switch_dist) in INITIAL_POSES.items():
 
         bl.include(
             "svea_core",
             "svea.launch.py",
             name=name,
-            is_sim=is_sim,
+            is_sim=sim,
             is_indoor=True,
             initial_pose_x=init_x,
             initial_pose_y=init_y,
@@ -254,7 +254,7 @@ def main(
                     "aruco_camera_test.py",
                     name="aruco_camera_test",
                     params=dict(
-                        is_sim=is_sim,
+                        is_sim=sim,
                         dictionary=aruco_dictionary,
                         marker_length_m=aruco_marker_length_m,
                         display=aruco_display,
@@ -285,7 +285,7 @@ def main(
                     target_velocity=stanley_target_velocity,
                     turn_velocity=stanley_turn_velocity,
                     max_steering_rad=stanley_max_steering_rad,
-                    is_sim=is_sim,
+                    is_sim=sim,
                     **{"localization/base_frame": f"{name}/base_link"},
                 ),
             )
@@ -302,7 +302,7 @@ def main(
                     turn_velocity=stanley_turn_velocity,
                     max_steering_rad=stanley_max_steering_rad,
                     location=start_loc,
-                    is_sim=is_sim,
+                    is_sim=sim,
                     **{"localization/base_frame": f"{name}/base_link"},
                 ),
             )
@@ -318,11 +318,11 @@ def main(
                     target_velocity=stanley_target_velocity,
                     turn_velocity=stanley_turn_velocity,
                     max_steering_rad=stanley_max_steering_rad,
-                    is_sim=is_sim,
+                    is_sim=sim,
                     **{"localization/base_frame": f"{name}/base_link"},
                 ),
             )
-            if is_sim:
+            if sim:
                 bl.node(
                     "svea_charging",
                     "cylinder_docking.py",
@@ -341,7 +341,6 @@ def main(
                     name="line_follower",
                     params=dict(
                         use_rviz=use_foxglove,
-                        is_sim=is_sim,
                         image_topic=camera_image_topic,
                         aruco_stop_distance_m=bt_dock_distance_m,
                     ),
@@ -352,8 +351,8 @@ def main(
                 "bt_runner.py",
                 name="bt_runner",
                 params=dict(
-                    is_sim=is_sim,
-                    switch_distance_m=bt_switch_distance_m,
+                    is_sim=sim,
+                    switch_distance_m=switch_dist,
                     docking_exit_distance_m=bt_docking_exit_distance_m,
                     charge_start_voltage=bt_charge_start_voltage,
                     charge_done_voltage=bt_charge_done_voltage,
@@ -369,12 +368,12 @@ def main(
                     name_svea = name,
                     other_svea = other_name,        
                     controller_timeout_s=control_mux_timeout_s,
-                    is_sim = is_sim,
+                    is_sim = sim,
                     **{"localization/base_frame": f"{name}/base_link"},
                 ),
             )
             
-            if is_sim:
+            if sim:
                 bl.node(
                     "svea_charging",
                     "battery_simulator.py",

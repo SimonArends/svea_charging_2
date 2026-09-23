@@ -49,7 +49,7 @@ class battery_simulator(rx.Node):
 
     # State
     def on_startup(self):
-        self.battery_soc = 0.95
+        self.battery_soc = 0.5
         # Robot position
         self.robot_x = 0.0
         self.robot_y = 0.0

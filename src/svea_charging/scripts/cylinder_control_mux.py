@@ -59,16 +59,16 @@ class control_mux(rx.Node):
             else:
                 self.waiting = False
 
-    @rx.Subscriber(Odometry, "/svea3/odom")
-    def _odometry_cb(self, msg: Odometry):
-        x = float(msg.pose.pose.position.y)
-        y = -float(msg.pose.pose.position.x)
+    # @rx.Subscriber(Odometry, "/svea3/odom")
+    # def _odometry_cb(self, msg: Odometry):
+    #     x = float(msg.pose.pose.position.y)
+    #     y = -float(msg.pose.pose.position.x)
 
-        new_region = self.get_regions(x, y)
+    #     new_region = self.get_regions(x, y)
 
-        if new_region != self.region:
-            self.region = new_region
-            self.region_entry_time = self._now_s()
+    #     if new_region != self.region:
+    #         self.region = new_region
+    #         self.region_entry_time = self._now_s()
 
     @rx.Subscriber(String, "mission/active_controller", qos_pubber)
     def _active_controller_cb(self, msg: String):
@@ -109,6 +109,20 @@ class control_mux(rx.Node):
         self.line_cmd.stamp_s = self._now_s()
 
     def on_startup(self):
+        if self.is_sim:
+            self.sim_odom_sub = self.create_subscription(
+                Odometry,
+                "odometry/local",
+                self.odom_sim_cb,
+                qos_pubber,
+            )
+        else:
+            self.odom_sub = self.create_subscription(
+                Odometry,
+                "/svea_3/odom",
+                self.odom_cb,
+                qos_pubber,
+            )
         self.region = ""
         self.other_region = ""
 
@@ -141,6 +155,26 @@ class control_mux(rx.Node):
         self.create_timer(period, self.loop)
 
         self.get_logger().info("Control mux started")
+
+    def odom_sim_cb(self, msg: Odometry):
+        x = float(msg.pose.pose.position.x)
+        y = float(msg.pose.pose.position.y)
+
+        new_region = self.get_regions(x, y)
+
+        if new_region != self.region:
+            self.region = new_region
+            self.region_entry_time = self._now_s()
+
+    def odom_cb(self, msg: Odometry):
+        x = float(msg.pose.pose.position.y)
+        y = -float(msg.pose.pose.position.x)
+
+        new_region = self.get_regions(x, y)
+
+        if new_region != self.region:
+            self.region = new_region
+            self.region_entry_time = self._now_s()
 
     def loop(self):
         # x = self.localizer.get_x()
