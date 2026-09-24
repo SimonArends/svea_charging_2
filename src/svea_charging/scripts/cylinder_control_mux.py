@@ -3,12 +3,14 @@
 from dataclasses import dataclass
 from nav_msgs.msg import Odometry
 from std_msgs.msg import Bool, Float32, String
-
+import rclpy 
+from rclpy.node import Node
 from rclpy.qos import (
     QoSDurabilityPolicy,
     QoSHistoryPolicy,
     QoSProfile,
     QoSReliabilityPolicy,
+    qos_profile_sensor_data,
 )
 
 from svea_core import rosonic as rx
@@ -31,7 +33,7 @@ class ControllerCommand:
 
 
 class control_mux(rx.Node):
-    is_sim = rx.Parameter(True)
+    is_sim = rx.Parameter(False)
     name_svea = rx.Parameter("svea_a")
     other_svea = rx.Parameter("svea_b")
     controller_timeout_s = rx.Parameter(0.3)
@@ -119,9 +121,9 @@ class control_mux(rx.Node):
         else:
             self.odom_sub = self.create_subscription(
                 Odometry,
-                "/svea_3/odom",
+                "/svea3/odom",
                 self.odom_cb,
-                qos_pubber,
+                qos_profile_sensor_data,
             )
         self.region = ""
         self.other_region = ""

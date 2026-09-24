@@ -9,14 +9,16 @@ FROM ${BUILD_TAG:-ghcr.io/kth-sml/svea:latest}
 
 ARG ROSDISTRO
 ARG DEBIAN_FRONTEND=noninteractive
-
+#ENV ROS_AUTOMATIC_DISCOVERY_RANGE=SUBNET
 ## Update Infrastructure (may have changed from base build)
 
 COPY entrypoint ./
 
 ## Setup Development Environment
 
-RUN apt-get update -y
+RUN apt-get update -y && \
+    apt-get install --no-install-recommends -y \
+        ros-${ROSDISTRO}-rmw-zenoh-cpp
 
 # # You can add extra apt dependencies like this...
 # RUN apt-get install --no-install-recommends -y \
