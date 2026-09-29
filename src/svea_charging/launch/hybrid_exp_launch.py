@@ -40,7 +40,7 @@ ROUTE_PRESETS = {
 @launch_this
 def main(
     is_sim: bool = False,
-    name: str = "self",
+    name: str = "svea_a",
     enabled: bool = True,
     transport_start_location: str = "A",
     initial_pose_x: float = -1.2,
@@ -73,13 +73,13 @@ def main(
     aruco_output: str = "aruco_marker.png",
     aruco_calibration_file: str = "",
     aruco_focal_length_px: float = -1.0,
-    docking_target_velocity: float = 0.09,
+    docking_target_velocity: float = 0.2,
     dock_target_angle_deg: float = 85.0,
-    bt_dock_distance_m: float = 0.62,
+    bt_dock_distance_m: float = 0.71,
     bt_switch_distance_m: float = 1.9, #the aruco is placed right in the charging point (origin) in simulation. An actual aruco would need to be somewhere else.
     bt_docking_exit_distance_m: float = 2.3,
-    bt_charge_start_voltage: float = 11.1, #lower gives more trips in transport mode, if you are close to charge done voltage you might always be charging.
-    bt_charge_done_voltage: float = 11.48,
+    bt_charge_start_voltage: float = 11.2, #lower gives more trips in transport mode, if you are close to charge done voltage you might always be charging.
+    bt_charge_done_voltage: float = 12.55,
     bt_charge_voltage_confirm_s: float = 3.0,
     stanley_target_velocity: float = 0.48, #gives approx 0.33 velocity commands by the Stanley. Stanley does not reach target. 
     stanley_turn_velocity: float = 0.48, 
@@ -99,13 +99,15 @@ def main(
     battery_charge_current: float = 19.5,
     battery_discharge_current_stationary: float = -0.9,
     battery_discharge_current_driving: float = -18,
+    ## LiDAR
+    lidar_ip: str = "192.168.0.10",
 ):
 
     bl = BetterLaunch()
 
     camera_frame_id = camera_frame_id.format(name=name)
     aruco_frame_id = aruco_frame_id.format(name=name)
-
+    laser_frame = f"{name}/laser"
     if route_preset:
         if route_preset not in ROUTE_PRESETS:
             raise ValueError(
@@ -130,33 +132,34 @@ def main(
         post_a_params = bl.find("svea_charging", "params/routes/post_a.yaml")
     if not transport_stanley_params:
         transport_stanley_params = bl.find("svea_charging", "params/routes/transport_stanley.yaml")
-    
-    bl.node("nav2_map_server", "map_server",
-                name="map_server",
-                params=dict(yaml_filename=bl.find(map_pkg, f"{map_name}.yaml"),
-                            use_sim_time=False,
-                            topic_name=map_topic))
 
-    bl.include("foxglove_bridge", "foxglove_bridge_launch.xml",
-                   port=8765)
+    if not is_sim:
+        bl.node("nav2_map_server", "map_server",
+                    name="map_server",
+                    params=dict(yaml_filename=bl.find(map_pkg, f"{map_name}.yaml"),
+                                use_sim_time=False,
+                                topic_name=map_topic))
 
-    bl.node(
-        "svea_charging",
-        "automatic_scheduler.py",
-        name="automatic_scheduler",
-        params=dict(
-        charge_done_voltage = bt_charge_done_voltage,
-        charging_current = battery_charge_current,
-        idle_current = battery_discharge_current_stationary,
-        moving_current = battery_discharge_current_driving,
-        ),
-    )
+        bl.include("foxglove_bridge", "foxglove_bridge_launch.xml",
+                    port=8765)
 
-    bl.node(
-        "svea_charging",
-        "performance_logger.py",
-        name="performance_logger",
-    )
+        bl.node(
+            "svea_charging",
+            "automatic_scheduler.py",
+            name="automatic_scheduler",
+            params=dict(
+            charge_done_voltage = bt_charge_done_voltage,
+            charging_current = battery_charge_current,
+            idle_current = battery_discharge_current_stationary,
+            moving_current = battery_discharge_current_driving,
+            ),
+        )
+
+        bl.node(
+            "svea_charging",
+            "performance_logger.py",
+            name="performance_logger",
+        )
 
     # bl.node(
     #     "svea_charging",
@@ -170,10 +173,15 @@ def main(
             "mocap.launch.py",
         )
 
-    INITIAL_POSES = {
-    "svea_a": (-1.2, 0.0, 1.5, "A", "svea_b", False, 1.9),
-    "svea_b": (1.2, 0.0, -1.64, "B", "svea_a", True, 1.0),
-    }
+
+    if not is_sim:
+        INITIAL_POSES = {
+            "svea_a": (-1.2, 0.0, 1.5, "A", "svea_b", False, 1.9),
+            }
+    if is_sim:
+        INITIAL_POSES = {
+            "svea_b": (1.2, 0.0, -1.64, "B", "svea_a", True, 1.0),
+            }
 
     for name, (init_x, init_y, init_a, start_loc, other_name, sim, switch_dist) in INITIAL_POSES.items():
 
@@ -200,6 +208,10 @@ def main(
             datum_file=datum_file,
             use_foxglove=use_foxglove,
         )
+        bl.include("svea_localization", "lidar.launch.py",
+            lidar_ip=lidar_ip,
+            lidar_frame=laser_frame)
+
 
         with bl.group(name):
             bl.node(
@@ -328,7 +340,8 @@ def main(
                     "cylinder_docking.py",
                     name="cylinder_docking",
                     params={
-                        "scan_topic": "scan",
+                        "is_sim": is_sim,
+                        "scan_topic": "/scan",
                         "target_velocity": docking_target_velocity,
                         "dock_target_angle_deg": dock_target_angle_deg,
                         "localization/base_frame": f"{name}/base_link",
@@ -344,6 +357,18 @@ def main(
                         image_topic=camera_image_topic,
                         aruco_stop_distance_m=bt_dock_distance_m,
                     ),
+                )
+                bl.node(
+                    "svea_charging",
+                    "cylinder_docking.py",
+                    name="cylinder_docking",
+                    params={
+                        "is_sim": is_sim,
+                        "scan_topic": "/scan",
+                        "target_velocity": docking_target_velocity,
+                        "dock_target_angle_deg": dock_target_angle_deg,
+                        "localization/base_frame": f"{name}/base_link",
+                    },
                 )
 
             bl.node(

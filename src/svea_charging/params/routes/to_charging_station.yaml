@@ -59,7 +59,7 @@
 
     target_velocity: 0.28
     turn_velocity: 0.12
-    goal_tolerance: 0.75
+    goal_tolerance: 0.02
 
     # The first waypoint and first route segment define the required start.
     start_tolerance: 1.0

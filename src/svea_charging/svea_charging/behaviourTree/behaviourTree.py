@@ -25,9 +25,10 @@ class MissionBlackboard:
     charging_error: bool = False
     dist_to_station: float | None = None
     aruco_distance: float | None = None
+    cyl_dist: float | None = None
     switch_distance_m: float = 2.5
     docking_exit_distance_m: float = 2.75
-    dock_distance_m: float = 0.622
+    dock_distance_m: float = 0.75
     charge_start_voltage: float = 12.6
     charge_done_voltage: float = 12.6
     charge_voltage_confirm_s: float = 3.0
@@ -42,6 +43,8 @@ class MissionBlackboard:
     need_charging: bool = False
     charge_permission: bool = False
     is_sim: bool = False
+    dock_with_stanley: bool = False
+    use_cyl_distance: bool = True
 
 
 
@@ -128,7 +131,10 @@ class ChargingMissionTree:
         return NodeStatus.FAILURE
 
     def is_near_docking_zone(self) -> str:
-        distance = self.bb.aruco_distance
+        if self.bb.use_cyl_distance:
+            distance = self.bb.cyl_dist
+        else:
+            distance = self.bb.aruco_distance
         if self.bb.active_controller == "cylinder_docking" or self.bb.active_controller == "line_follower":
             if distance is None or distance <= self.bb.docking_exit_distance_m:
                 self.bb.mission_phase = "docking"
@@ -141,11 +147,20 @@ class ChargingMissionTree:
         if distance <= self.bb.switch_distance_m:
             self.bb.mission_phase = "docking"
             return NodeStatus.SUCCESS
+        if self.bb.dock_with_stanley:
+            if distance <= .67:
+                self.bb.mission_phase = "docking"
+                return NodeStatus.SUCCESS
         return NodeStatus.FAILURE
 
     def run_stanley_approach(self) -> str:
         self.bb.active_controller = "stanley"
         self.bb.mission_phase = "approach"
+        if self.bb.dock_with_stanley:
+            if self.bb.aruco_distance is not None and self.bb.aruco_distance <= .8:
+                self.set_charging_arm(True)
+            else:
+                self.set_charging_arm(False)
         return NodeStatus.RUNNING
 
     def run_transport_stanley_approach(self) -> str:
@@ -163,7 +178,7 @@ class ChargingMissionTree:
 
     def is_docked(self) -> str:
         if self.bb.battery_current > -0.7 or self.bb.was_charged:
-            self.bb.active_controller = "docked"
+            self.bb.active_controller = "idle"
             self.bb.mission_phase = "docked"
             self.bb.charging_active = True
             return NodeStatus.SUCCESS
@@ -171,9 +186,16 @@ class ChargingMissionTree:
 
     def run_line_follower_docking(self) -> str:
         if self.bb.is_sim:
-            self.bb.active_controller = "cylinder_docking"
+            if self.bb.dock_with_stanley:
+                self.bb.active_controller = "stanley"
+            else:
+                self.bb.active_controller = "cylinder_docking"
         else:
-            self.bb.active_controller = "line_follower"
+            if self.bb.dock_with_stanley:
+                self.bb.active_controller = "stanley"
+            else:
+                #self.bb.active_controller = "line_follower"
+                self.bb.active_controller = "cylinder_docking"
         self.bb.mission_phase = "docking"
 
         if self.bb.is_sim:
@@ -184,11 +206,20 @@ class ChargingMissionTree:
                     self.set_charging_arm(False)
                 return NodeStatus.RUNNING
         else:
-            if self.bb.charger_visible and self.bb.line_visible:
-                if self.bb.aruco_distance is not None and self.bb.aruco_distance <= .91:
-                    self.set_charging_arm(True)
+            if self.bb.dock_with_stanley and self.bb.aruco_distance is not None:
+                self.set_charging_arm(True)
+                return NodeStatus.RUNNING
+            if self.bb.charger_visible: #and self.bb.line_visible:
+                if self.bb.use_cyl_distance:
+                    if self.bb.cyl_dist is not None and self.bb.cyl_dist <= .3:
+                        self.set_charging_arm(True)
+                    else:
+                        self.set_charging_arm(False)
                 else:
-                    self.set_charging_arm(False)
+                    if self.bb.aruco_distance is not None and self.bb.aruco_distance <= .91:
+                        self.set_charging_arm(True)
+                    else:
+                        self.set_charging_arm(False)
                 return NodeStatus.RUNNING
 
         self.set_charging_arm(False)

@@ -47,6 +47,7 @@ class bt_runner(rx.Node):
     stanley_status_topic = rx.Parameter("outdoor_stanley/status")
     transport_location_topic = rx.Parameter("outdoor_stanley/location")
     charge_permission_topic = rx.Parameter("mission/charge_permission")
+    cyl_dist_topic = rx.Parameter("cylinder_docking/cylinder_distance_m")
 
     active_controller_pub = rx.Publisher(String, "mission/active_controller", qos_pubber)
     phase_pub = rx.Publisher(String, "mission/phase", qos_pubber)
@@ -75,6 +76,16 @@ class bt_runner(rx.Node):
             self.bb.charger_visible = True
         else:
             self.bb.aruco_distance = None
+            self.bb.charger_visible = False
+
+    @rx.Subscriber(Float32, cyl_dist_topic)
+    def _cyl_dist_cb(self, msg: float):
+        distance = float(msg.data)
+        if distance > -0.3:
+            self.bb.cyl_dist = distance
+            self.bb.charger_visible = True
+        else:
+            self.bb.cyl_dist = None
             self.bb.charger_visible = False
 
     @rx.Subscriber(String, line_status_topic, qos_pubber)

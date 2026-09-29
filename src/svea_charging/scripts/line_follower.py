@@ -66,8 +66,8 @@ class LineFollowerLocalizationInterface(LocalizationInterface):
 class line_follower(rx.Node):
     dt = rx.Parameter(0.05)
     image_topic = rx.Parameter("/svea67/image_raw")
-    target_velocity = rx.Parameter(0.19)
-    max_velocity = rx.Parameter(0.3)
+    target_velocity = rx.Parameter(0.26)
+    max_velocity = rx.Parameter(0.4)
     stop_on_lost_line = rx.Parameter(True)
     controller_name = rx.Parameter("line_follower")
     active_controller = rx.Parameter('idle')
@@ -114,19 +114,19 @@ class line_follower(rx.Node):
     use_aruco_stop = rx.Parameter(True)
     aruco_distance_topic = rx.Parameter("aruco/distance_m")
     aruco_stop_distance_m = rx.Parameter(0.622)
-    platform_transition_distance_m = rx.Parameter(1.0)
+    platform_transition_distance_m = rx.Parameter(1.2)
     ramp_min_velocity = rx.Parameter(0.3)
     approach_deceleration_mps2 = rx.Parameter(0.6)
     # Keep correcting until the behaviour tree detects charging. Set this above
     # zero only if a stationary acceptance band is desired.
-    dock_tolerance_m = rx.Parameter(0.0)
+    dock_tolerance_m = rx.Parameter(0.02)
     aruco_velocity_kp = rx.Parameter(0.35)
     aruco_velocity_ki = rx.Parameter(0.03)
     aruco_velocity_kd = rx.Parameter(0.0)
     aruco_velocity_integral_limit = rx.Parameter(0.3)
     aruco_max_backup_velocity = rx.Parameter(0.4)
-    aruco_min_forward_command = rx.Parameter(0.18)
-    aruco_min_backup_command = rx.Parameter(0.4)
+    aruco_min_forward_command = rx.Parameter(0.15)
+    aruco_min_backup_command = rx.Parameter(0.15)
     # Must exceed dock_settle_time_s to actually take effect — see
     # _change_dock_search_direction(), which waits
     # max(dock_settle_time_s, reverse_neutral_time_s) before reversing.
@@ -135,7 +135,7 @@ class line_follower(rx.Node):
     # bag (line_follower_docking_check) showed commanded reverse averaging
     # -0.257 m/s for 6.75s straight while measured velocity averaged only
     # -0.017 m/s — i.e. reverse was requested but barely happened.
-    reverse_neutral_time_s = rx.Parameter(0.6)
+    reverse_neutral_time_s = rx.Parameter(1.2)
     dock_search_half_width_m = rx.Parameter(0.015)
     dock_settle_time_s = rx.Parameter(0.30)
     velocity_command_slew_mps2 = rx.Parameter(0.7)
