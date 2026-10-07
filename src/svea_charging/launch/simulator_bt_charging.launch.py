@@ -312,6 +312,7 @@ def main(
                 "cylinder_docking.py",
                 name="cylinder_docking",
                 params={
+                    "is_sim": is_sim,
                     "scan_topic": "scan",
                     "target_velocity": docking_target_velocity,
                     "dock_target_angle_deg": dock_target_angle_deg,

@@ -276,9 +276,9 @@ class cylinder_docking(rx.Node):
         # Ignore objects too close to the robot
         min_cylinder_x = -0.30         # 30 cm
         # Cylinder must be sufficiently to the left/right of robot
-        min_side_distance = 0.05     # 25 cm
+        min_side_distance = -0.1     # 25 cm
         # The two cylinders should be roughly aligned in front of robot
-        max_pair_x_difference = 0.4   # 75 cm
+        max_pair_x_difference = 0.9   # 75 cm
         # Expected separation between the two cylinders
         min_cylinder_separation = 0.4
         max_cylinder_separation = 0.9
