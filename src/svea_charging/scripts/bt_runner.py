@@ -41,8 +41,6 @@ class bt_runner(rx.Node):
     is_sim = rx.Parameter(False)
 
     dist_to_goal_topic = rx.Parameter("dist_to_goal")
-    aruco_distance_topic = rx.Parameter("aruco/distance_m")
-    line_status_topic = rx.Parameter("line_follower/status")
     battery_charging_topic = rx.Parameter("mavros/battery")  
     stanley_status_topic = rx.Parameter("outdoor_stanley/status")
     transport_location_topic = rx.Parameter("outdoor_stanley/location")
@@ -68,16 +66,6 @@ class bt_runner(rx.Node):
     def _transport_location(self, msg: String):
     	self.bb.transport_location = msg.data	
 
-    @rx.Subscriber(Float32, aruco_distance_topic)
-    def _aruco_distance_cb(self, msg: Float32):
-        distance = float(msg.data)
-        if distance > 0.0:
-            self.bb.aruco_distance = distance
-            self.bb.charger_visible = True
-        else:
-            self.bb.aruco_distance = None
-            self.bb.charger_visible = False
-
     @rx.Subscriber(Float32, cyl_dist_topic)
     def _cyl_dist_cb(self, msg: float):
         distance = float(msg.data)
@@ -87,11 +75,6 @@ class bt_runner(rx.Node):
         else:
             self.bb.cyl_dist = None
             self.bb.charger_visible = False
-
-    @rx.Subscriber(String, line_status_topic, qos_pubber)
-    def _line_status_cb(self, msg: String):
-        status = msg.data
-        self.bb.line_visible = status not in {"line_lost", "idle"}
 
     @rx.Subscriber(BatteryState, battery_charging_topic, battery_qos)
     def _battery_charging_cb(self, msg: BatteryState):
