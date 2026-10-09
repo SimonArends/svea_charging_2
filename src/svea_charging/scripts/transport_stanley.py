@@ -6,14 +6,6 @@ Its route is a fixed sequence of waypoints in the outdoor ``map`` frame.
 It publishes Stanley command topics so the charging BT/control_mux is the
 only thing that owns actuation.
 
-This node shuttles indefinitely between two endpoints, "A" and "B".
-``map_waypoints`` describes the A -> B leg (first point is A, last point
-is B) and ``map_waypoints_b_to_a`` independently describes the B -> A leg
-(first point is B, last point is A) -- the two routes need not be the
-same path. On every goal arrival the node re-runs the full startup
-sequence (localization settle, start-position tolerance, start-heading
-tolerance, path initialization) before departing on the opposite leg,
-exactly as it does on a cold start.
 """
 
 import ast
@@ -52,44 +44,38 @@ class OutdoorStanley(rx.Node):
     turn_velocity = rx.Parameter(0.12)
     max_steering_rad = rx.Parameter(0.45)
     goal_tolerance = rx.Parameter(0.75)
-    start_tolerance = rx.Parameter(1.50)
+    start_tolerance = rx.Parameter(1.0)
     start_heading_tolerance = rx.Parameter(0.50)
     corridor_width = rx.Parameter(1.50)
     turn_curvature_threshold = rx.Parameter(0.50)
     minimum_turning_radius = rx.Parameter(0.40)
     odometry_timeout_s = rx.Parameter(0.30)
-    use_gps = rx.Parameter(False)
+    use_gps = rx.Parameter(False) #set false for indoor experiment for the experiment
     gps_timeout_s = rx.Parameter(2.50)
     rtk_timeout_s = rx.Parameter(2.50)
-    require_rtk_fixed = rx.Parameter(False)
-    rtk_fixed_settle_s = rx.Parameter(10.0)
+    require_rtk_fixed = rx.Parameter(False) #set false for indoor experiment for the experiment
+    rtk_fixed_settle_s = rx.Parameter(3.0)
     max_horizontal_accuracy = rx.Parameter(0.50)
-    localization_settle_s = rx.Parameter(10.0)
+    localization_settle_s = rx.Parameter(3.0)
     max_settle_position_spread = rx.Parameter(0.20)
-    use_course_heading = rx.Parameter(False)
+    use_course_heading = rx.Parameter(False) #set false for indoor experiment
     course_heading_min_distance = rx.Parameter(0.25)
     course_heading_alpha = rx.Parameter(0.35)
     controller_name = rx.Parameter("transport_stanley")
     active_controller = rx.Parameter("idle")
     #localizer = LocalizationInterface()
+    svea_name = rx.Parameter("svea_name")
 
-    # Which endpoint the node starts at: "A" or "B". "A" starts the A -> B
-    # leg; "B" starts the B -> A leg. At runtime this is overwritten with
-    # "A", "B", "travelling_to_A" or "travelling_to_B" to reflect live state.
-    location = rx.Parameter("A")
-
+    
     # Fixed [x, y] positions in the outdoor global EKF's map frame.
     # map_waypoints is the A -> B route: first point is A, last is B.
-    map_waypoints = rx.Parameter(
-        "[[0.0, 0.0], [5.0, 0.0], [10.0, 0.0], [20.0, 0.0], "
-        "[30.0, 0.0], [40.0, 0.0], [50.0, 0.0]]"
-    )
-    # map_waypoints_b_to_a is the independent B -> A route: first point is
-    # B, last is A. It does not have to retrace map_waypoints.
-    map_waypoints_b_to_a = rx.Parameter(
-        "[[50.0, 0.0], [40.0, 0.0], [30.0, 0.0], [20.0, 0.0], "
-        "[10.0, 0.0], [5.0, 0.0], [0.0, 0.0]]"
-    )
+    map_waypoints_a_short = rx.Parameter("[[0.0, 0.0], [5.0, 0.0], [10.0, 0.0], [20.0, 0.0], [30.0, 0.0], [40.0, 0.0], [50.0, 0.0]]")
+    map_waypoints_a_mid = rx.Parameter("[[0.0, 0.0], [5.0, 0.0], [10.0, 0.0], [20.0, 0.0], [30.0, 0.0], [40.0, 0.0], [50.0, 0.0]]")
+    map_waypoints_a_long = rx.Parameter("[[0.0, 0.0], [5.0, 0.0], [10.0, 0.0], [20.0, 0.0], [30.0, 0.0], [40.0, 0.0], [50.0, 0.0]]")
+    map_waypoints_b_short = rx.Parameter("[[0.0, 0.0], [5.0, 0.0], [10.0, 0.0], [20.0, 0.0], [30.0, 0.0], [40.0, 0.0], [50.0, 0.0]]")
+    map_waypoints_b_mid = rx.Parameter("[[0.0, 0.0], [5.0, 0.0], [10.0, 0.0], [20.0, 0.0], [30.0, 0.0], [40.0, 0.0], [50.0, 0.0]]")
+    map_waypoints_b_long = rx.Parameter("[[0.0, 0.0], [5.0, 0.0], [10.0, 0.0], [20.0, 0.0], [30.0, 0.0], [40.0, 0.0], [50.0, 0.0]]")
+
     odometry_topic = rx.Parameter("/svea3/odom")
     gps_topic = rx.Parameter("gps/fix")
     carrier_solution_topic = rx.Parameter("gps/carrier_solution")
@@ -100,7 +86,7 @@ class OutdoorStanley(rx.Node):
     command_steering_pub = rx.Publisher(Float32, steering_cmd_topic)
     command_velocity_pub = rx.Publisher(Float32, velocity_cmd_topic)
     status_pub = rx.Publisher(String, "outdoor_stanley/status")
-    location_pub = rx.Publisher(String, "outdoor_stanley/location")
+    # location_pub = rx.Publisher(String, "outdoor_stanley/charge_location")
     course_heading_pub = rx.Publisher(Float64, "outdoor_stanley/course_heading")
     cross_track_error_pub = rx.Publisher(Float64, "outdoor_stanley/cross_track_error")
     yaw_error_pub = rx.Publisher(Float64, "outdoor_stanley/yaw_error")
@@ -111,29 +97,42 @@ class OutdoorStanley(rx.Node):
     waypoints_pub = rx.Publisher(Marker, "outdoor_stanley/waypoints_marker")
     traj_pub = rx.Publisher(Marker, "outdoor_stanley/traj_marker")
 
-    # @rx.Subscriber(Odometry, odometry_topic)
-    # def _odometry_cb(self, msg: Odometry):
-    #     q = msg.pose.pose.orientation
-    #     odom_yaw = euler_from_quaternion([q.x, q.y, q.z, q.w])[2] - math.pi/2
-    #     odom_yaw = math.atan2(math.sin(odom_yaw), math.cos(odom_yaw))  # wrap to [-pi, pi]
-    #     x = float(msg.pose.pose.position.y)
-    #     y = -float(msg.pose.pose.position.x)
-    #     yaw = self._heading_from_course(x, y, odom_yaw) + 0*1.57
-    #     self.state = (
-    #         x,
-    #         y,
-    #         float(yaw),
-    #         float(msg.twist.twist.linear.x),
-    #     )
-    #     self.last_odom_s = self._now_s()
-    #     samples = getattr(self, "settle_samples", None)
-    #     if samples is not None and not getattr(self, "path_ready", False):
-    #         samples.append((self.last_odom_s, self.state[0], self.state[1]))
 
     @rx.Subscriber(NavSatFix, gps_topic, qos_profile=qos_profile_sensor_data)
     def _gps_cb(self, msg: NavSatFix):
         if msg.status.status >= NavSatStatus.STATUS_FIX:
             self.last_gps_s = self._now_s()
+    
+    @rx.Subscriber(String, "mission/transport_length")
+    def _load_path(self, msg: String):
+        self.path_length = msg.data
+        # self.direction = "from_A" if self.location == "A" else "from_B"
+        if self.svea_name == "svea_a":
+            if self.path_length == "short":
+                self.waypoints = self.route_a_short
+            elif self.path_length == "mid":
+                self.waypoints = self.route_a_mid
+            elif self.path_length == "long":
+                self.waypoints = self.route_a_long
+        elif self.svea_name == "svea_b":
+            if self.path_length == "short":
+                self.waypoints = self.route_b_short
+            elif self.path_length == "mid":
+                self.waypoints = self.route_b_mid
+            elif self.path_length == "long":
+                self.waypoints = self.route_b_long
+        else:
+            return
+        self.start = self.waypoints[0]
+        self.goal = self.waypoints[-1]
+        self.route_heading = math.atan2(
+            self.waypoints[1][1] - self.start[1],
+            self.waypoints[1][0] - self.start[0],
+        )
+        if bool(self.use_course_heading):
+            self.course_heading = self.route_heading
+        self.route_selected = True
+        # self._publish_location()
 
     @rx.Subscriber(UInt8, carrier_solution_topic)
     def _carrier_solution_cb(self, msg: UInt8):
@@ -191,30 +190,26 @@ class OutdoorStanley(rx.Node):
         self.viz_counter = 0
         self.controller = StanleyController(node=self)
         self.controller.target_velocity = float(self.target_velocity)
+        self.path_length = None
 
-        # map_waypoints (A -> B) and map_waypoints_b_to_a (B -> A) are two
-        # independent routes, each parsed once so a leg switch is just a
-        # pointer swap, not a re-parse.
-        self.route_a_to_b = self._parse_waypoints(str(self.map_waypoints))
-        self.route_b_to_a = self._parse_waypoints(str(self.map_waypoints_b_to_a))
+        # map_waypoints (A -> charger) and map_waypoints_b_to_charge (B -> charger)
+        # are two independent routes, each parsed once.
+        self.route_a_short = self._parse_waypoints(str(self.map_waypoints_a_short))
+        self.route_a_mid = self._parse_waypoints(str(self.map_waypoints_a_mid))
+        self.route_a_long = self._parse_waypoints(str(self.map_waypoints_a_long))
+        self.route_b_short = self._parse_waypoints(str(self.map_waypoints_b_short))
+        self.route_b_mid = self._parse_waypoints(str(self.map_waypoints_b_mid))
+        self.route_b_long = self._parse_waypoints(str(self.map_waypoints_b_long))
 
-        # Trusted directly from the parameter, no validation: "A" starts the
-        # A -> B leg, anything else starts the B -> A leg.
-        self.location = str(self.location)
-        # direction: which endpoint the *active* leg is currently heading
-        # toward ("to_A" or "to_B").
-        self.direction = "to_B" if self.location == "A" else "to_A"
-        self.waypoints = self.route_a_to_b if self.direction == "to_B" else self.route_b_to_a
-
-        self.start = self.waypoints[0]
-        self.goal = self.waypoints[-1]
-        self.route_heading = math.atan2(
-            self.waypoints[1][1] - self.start[1],
-            self.waypoints[1][0] - self.start[0],
-        )
-        if bool(self.use_course_heading):
-            self.course_heading = self.route_heading
-        self._publish_location()
+        # Location arrives asynchronously via the _location subscriber, not from a
+        # startup parameter, so nothing about the route can be computed yet.
+        # self.location = None
+        # self.direction = None
+        self.waypoints = None
+        self.start = None
+        self.goal = None
+        self.route_heading = None
+        self.route_selected = False
 
         period = 1.0 / max(float(self.update_hz), 1.0)
         self.create_timer(period, self.loop)
@@ -248,10 +243,9 @@ class OutdoorStanley(rx.Node):
             )
             return
         self.path_ready = True
-        destination = "B" if self.direction == "to_B" else "A"
-        self._set_location(f"travelling_to_{destination}")
+        # self._set_location(f"to_charger_{self.direction}")
         self.get_logger().info(
-            f"Route toward {destination} initialized with {len(self.waypoints)} "
+            f" {self.path_length} route initialized with {len(self.waypoints)} "
             f"waypoints; goal=({self.goal[0]:.2f}, {self.goal[1]:.2f}) in map"
         )
 
@@ -291,13 +285,14 @@ class OutdoorStanley(rx.Node):
         if samples is not None and not getattr(self, "path_ready", False):
             samples.append((self.last_odom_s, self.state[0], self.state[1]))
 
+
     def loop(self):
         # self.state = self.localizer.get_state()
         # self.last_odom_s = self._now_s()
         # samples = getattr(self, "settle_samples", None)
         # if samples is not None and not getattr(self, "path_ready", False):
         #     samples.append((self.last_odom_s, self.state[0], self.state[1]))
-        self._publish_location()
+        # self._publish_location()
         # A disabled observer must not compete with manual control or another
         # controller for the LLI. Once enabled, every inhibit condition sends
         # an explicit stop command.
@@ -335,7 +330,7 @@ class OutdoorStanley(rx.Node):
         at_path_end = self.controller.target_idx >= len(self.controller.cx) - 2
         if distance <= float(self.goal_tolerance) and at_path_end:
             self.finished = True
-            self._arrive_and_prepare_next_leg()
+            self._stop("goal reached")
             return
 
         self._set_speed_for_curvature()
@@ -345,43 +340,9 @@ class OutdoorStanley(rx.Node):
         self._publish_status("running")
         self._send_control(float(steering), float(velocity))
 
-    def _arrive_and_prepare_next_leg(self):
-        # Stop and report "goal_reached" for this leg first, exactly like a
-        # single-shot run would, then immediately queue up the return leg.
-        self._stop("goal reached")
-        arrived_at = "B" if self.direction == "to_B" else "A"
-        self._set_location(arrived_at)
-        self.get_logger().info(f"Arrived at {arrived_at}; loading the return leg")
-        self._load_next_leg()
-
-    def _load_next_leg(self):
-        self.direction = "to_A" if self.direction == "to_B" else "to_B"
-        self.waypoints = self.route_a_to_b if self.direction == "to_B" else self.route_b_to_a
-        self.start = self.waypoints[0]
-        self.goal = self.waypoints[-1]
-        self.route_heading = math.atan2(
-            self.waypoints[1][1] - self.start[1],
-            self.waypoints[1][0] - self.start[0],
-        )
-        if bool(self.use_course_heading):
-            # Restart the course-heading filter pointing the new direction;
-            # otherwise it carries the old (now ~180 degree wrong) estimate
-            # into the first ticks of the new leg.
-            self.course_heading = self.route_heading
-        self.last_course_point = None
-
-        # Force the full startup sequence to run again: settle, start
-        # tolerance, start heading tolerance, then path (re)initialization.
-        # self.finished is reset here (not left True) as a normal part of
-        # this; if anything ever throws between the caller setting it and
-        # this reset, the node fails safe by staying stopped.
-        self.finished = False
-        self.path_ready = False
-        self.route_error = None
-        self.controller.target_idx = 0
-        self.settle_samples.clear()
-
     def _inhibit_reason(self):
+        if not self.route_selected:
+            return "waiting for location"
         if self.finished:
             return "goal reached"
         if self.state is None:
@@ -487,6 +448,7 @@ class OutdoorStanley(rx.Node):
         self._publish_status(status)
         if reason != self.stop_reason:
             #log = self.get_logger().info if reason == "goal reached" else self.get_logger().warn
+            #log(f"Outdoor Stanley stopped: {reason}")
             self.get_logger().info(f"Outdoor Stanley stopped: {reason}")
             self.stop_reason = reason
 
@@ -509,12 +471,12 @@ class OutdoorStanley(rx.Node):
     def _publish_status(self, status):
         self.status_pub.publish(String(data=str(status)))
 
-    def _set_location(self, value):
-        self.location = str(value)
-        self._publish_location()
+    # def _set_location(self, value):
+    #     self.location = str(value)
+    #     self._publish_location()
 
-    def _publish_location(self):
-        self.location_pub.publish(String(data=str(self.location)))
+    # def _publish_location(self):
+    #     self.location_pub.publish(String(data=str(self.location)))
 
     def _heading_from_course(self, x, y, fallback_yaw):
         if not bool(self.use_course_heading):

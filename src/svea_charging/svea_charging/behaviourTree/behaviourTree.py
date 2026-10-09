@@ -17,20 +17,20 @@ from svea_charging.third_party.btree.btree import (
 @dataclass
 class MissionBlackboard:
     battery_current: float = -1.0
-    battery_voltage: float | None = None
+    # battery_voltage: float | None = None
     communication_ok: bool = True
-    charger_visible: bool = False
+    # charger_visible: bool = False
     charging_active: bool = False
-    charging_error: bool = False
-    dist_to_station: float | None = None
+    # charging_error: bool = False
+    # dist_to_station: float | None = None
     cyl_dist: float | None = None
     switch_distance_m: float = 2.5
     docking_exit_distance_m: float = 2.75
-    dock_distance_m: float = 0.75
-    charge_start_voltage: float = 12.6
-    charge_done_voltage: float = 12.6
-    charge_voltage_confirm_s: float = 3.0
-    charge_voltage_reached_at: float | None = None
+    # dock_distance_m: float = 0.75
+    # charge_start_voltage: float = 12.6
+    # charge_done_voltage: float = 12.6
+    # charge_voltage_confirm_s: float = 3.0
+    # charge_voltage_reached_at: float | None = None
     active_controller: str = "transport_stanley"
     mission_phase: str = "transport"
     last_tree_status: str = NodeStatus.RUNNING
@@ -38,9 +38,12 @@ class MissionBlackboard:
     was_charged: bool = False
     stanley_status: str | None = None
     transport_location: str | None = None
-    need_charging: bool = False
-    charge_permission: bool = False
-    is_sim: bool = False
+    # need_charging: bool = False
+    # charge_permission: bool = False
+    # is_sim: bool = False
+    vehicle_status: str = "startup"
+    charge_done: bool = False
+    action: str | None = None
 
 
 
@@ -63,11 +66,12 @@ class ChargingMissionTree:
     ):
         self.bb = blackboard
         self.set_charging_arm = set_charging_arm
-        transport_or_charge = Fallback(
-            ActionNode(self.needs_charging, "needs_charging"),
-            ActionNode(self.run_transport_stanley_approach, "run_transport_stanley_approach"),
-            name="transport_phase",
-        )
+
+        # transport_or_charge = Fallback(
+        #     ActionNode(self.needs_charging, "needs_charging"),
+        #     ActionNode(self.run_transport_stanley_approach, "run_transport_stanley_approach"),
+        #     name="transport_phase",
+        # )
         approach_phase = Fallback(
             ActionNode(self.is_near_docking_zone, "is_near_docking_zone"),
             ActionNode(self.run_stanley_approach, "run_stanley_approach"),
@@ -79,11 +83,8 @@ class ChargingMissionTree:
             name="docking_phase",
         )
         charge_phase = Sequence(
-            transport_or_charge,
-            ActionNode(self.allowed_to_charge, "allowed_to_charge"),
             approach_phase,
             docking_phase,
-            ActionNode(self.wait_until_charged, "wait_until_charged"),
             name="charge_phase",
         )
         exit_phase = Fallback(
@@ -99,10 +100,21 @@ class ChargingMissionTree:
                 name="communication_guard",
             ),
             Fallback(
+                ActionNode(self.wait, "wait"),
+                ActionNode(self.action_message, "action_message"),
+                name="action_guard",
+            ),
+            Fallback(
+                ActionNode(self.run_transport_stanley, "run_transport_stanley"),
+                ActionNode(self.charge_message, "charge_message"),
+                name="transport_or_charge",
+            ),
+            Fallback(
                 ActionNode(self.is_charged, "is_charged"),
                 charge_phase,
                 name="decision_phase",
             ),
+            ActionNode(self.wait_until_charged, "wait_until_charged"),
             exit_phase,
             name="charging_mission",
         )
@@ -124,6 +136,22 @@ class ChargingMissionTree:
         self.set_charging_arm(False)
         self.bb.active_controller = "idle"
         self.bb.mission_phase = "communication_error"
+        return NodeStatus.FAILURE
+        
+    def wait(self) -> str:
+        self.set_charging_arm(False)
+        self.bb.active_controller = "idle"
+        self.bb.mission_phase = "wait"
+        return NodeStatus.FAILURE
+
+    def action_message(self) -> str:
+        if self.bb.action == "charge_cycle" or self.bb.action == "transport":
+            return NodeStatus.SUCCESS
+        return NodeStatus.FAILURE
+
+    def charge_message(self) -> str:
+        if self.bb.action == "charge_cycle":
+            return NodeStatus.SUCCESS
         return NodeStatus.FAILURE
 
     def is_near_docking_zone(self) -> str:
@@ -147,24 +175,29 @@ class ChargingMissionTree:
         self.bb.mission_phase = "approach"
         return NodeStatus.RUNNING
 
-    def run_transport_stanley_approach(self) -> str:
+    def run_transport_stanley(self) -> str:
+        if self.bb.action == "charge_cycle":
+            return NodeStatus.FAILURE
         self.bb.active_controller = "transport_stanley"
         self.bb.mission_phase = "transport"
+        if self.bb.stanley_status == "goal_reached":
+            self.bb.vehicle_status = "transport_done"
         return NodeStatus.RUNNING
 
-    def allowed_to_charge(self) -> str:
-        if self.bb.charge_permission:
-            self.bb.mission_phase = "approach"
-            return NodeStatus.SUCCESS
-        self.bb.active_controller = "idle"
-        self.bb.mission_phase = "charge_not_allowed"
-        return NodeStatus.FAILURE
+    # def allowed_to_charge(self) -> str:
+    #     if self.bb.charge_permission:
+    #         self.bb.mission_phase = "approach"
+    #         return NodeStatus.SUCCESS
+    #     self.bb.active_controller = "idle"
+    #     self.bb.mission_phase = "charge_not_allowed"
+    #     return NodeStatus.FAILURE
 
     def is_docked(self) -> str:
-        if self.bb.battery_current > -0.7 or self.bb.was_charged:
+        if self.bb.battery_current > -0.7:# or self.bb.was_charged:
             self.bb.active_controller = "idle"
             self.bb.mission_phase = "docked"
             self.bb.charging_active = True
+            self.bb.vehicle_status = "docked"
             return NodeStatus.SUCCESS
         return NodeStatus.FAILURE
 
@@ -172,15 +205,15 @@ class ChargingMissionTree:
         self.bb.active_controller = "cylinder_docking"
         self.bb.mission_phase = "docking"
 
-        if self.bb.charger_visible:
-            if self.bb.cyl_dist is not None and self.bb.cyl_dist <= .3:
-                self.set_charging_arm(True)
-            else:
-                self.set_charging_arm(False)
-            return NodeStatus.RUNNING
+        # if self.bb.charger_visible:
+        if self.bb.cyl_dist is not None and self.bb.cyl_dist <= .3:
+            self.set_charging_arm(True)
+        else:
+            self.set_charging_arm(False)
+        return NodeStatus.RUNNING
 
-        self.set_charging_arm(False)
-        return NodeStatus.FAILURE
+        # self.set_charging_arm(False)
+        # return NodeStatus.FAILURE
 
     def _current_running_node_name(self) -> str:
         current = self._deepest_running_node(self.tree)
@@ -197,50 +230,51 @@ class ChargingMissionTree:
         deeper = self._deepest_running_node(current)
         return deeper if deeper is not None else current
 
-    def needs_charging(self) -> str:
-        if (
-            self.bb.charging_active
-            or self.bb.was_charged
-            or self.bb.battery_voltage is None
-            or self.bb.battery_voltage < self.bb.charge_start_voltage
-        ):
-            if self.bb.transport_location == "A" or self.bb.transport_location == "B":
-                self.bb.mission_phase = "approach"
-                self.bb.active_controller = "idle"
-                self.bb.need_charging = True
-                return NodeStatus.SUCCESS
-        self.bb.need_charging = False
-        return NodeStatus.FAILURE
+    # def needs_charging(self) -> str:
+    #     if (
+    #         self.bb.charging_active
+    #         or self.bb.was_charged
+    #         or self.bb.battery_voltage is None
+    #         or self.bb.battery_voltage < self.bb.charge_start_voltage
+    #     ):
+    #         if self.bb.transport_location == "A" or self.bb.transport_location == "B":
+    #             self.bb.mission_phase = "approach"
+    #             self.bb.active_controller = "idle"
+    #             self.bb.need_charging = True
+    #             return NodeStatus.SUCCESS
+    #     self.bb.need_charging = False
+    #     return NodeStatus.FAILURE
 
     def is_charged(self) -> str:
-        voltage = self.bb.battery_voltage
-        if self.bb.was_charged:
+        if self.bb.was_charged or self.bb.charging_active:
             return NodeStatus.SUCCESS
 
-        if voltage is None or voltage < self.bb.charge_done_voltage:
-            self.bb.charge_voltage_reached_at = None
-            return NodeStatus.FAILURE
+        # if voltage is None or voltage < self.bb.charge_done_voltage:
+        #     self.bb.charge_voltage_reached_at = None
+        #     return NodeStatus.FAILURE
 
-        if self.bb.charge_voltage_reached_at is None:
-            self.bb.charge_voltage_reached_at = time.monotonic()
-            return NodeStatus.FAILURE
+        # if self.bb.charge_voltage_reached_at is None:
+        #     self.bb.charge_voltage_reached_at = time.monotonic()
+        #     return NodeStatus.FAILURE
 
-        if (
-            time.monotonic() - self.bb.charge_voltage_reached_at
-            < self.bb.charge_voltage_confirm_s
-        ):
-            return NodeStatus.FAILURE
+        # if (
+        #     time.monotonic() - self.bb.charge_voltage_reached_at
+        #     < self.bb.charge_voltage_confirm_s
+        # ):
+        #     return NodeStatus.FAILURE
 
-        if voltage >= self.bb.charge_done_voltage:
-            self.bb.active_controller = "post_stanley"
-            self.bb.mission_phase = "charged"
-            self.bb.charging_active = False
-            self.bb.was_charged = True
-            return NodeStatus.SUCCESS
+        # if voltage >= self.bb.charge_done_voltage:
+        #     self.bb.active_controller = "post_stanley"
+        #     self.bb.mission_phase = "charged"
+        #     self.bb.charging_active = False
+        #     self.bb.was_charged = True
+        #     return NodeStatus.SUCCESS
         return NodeStatus.FAILURE
 
     def wait_until_charged(self) -> str:
-        if self.is_charged() == NodeStatus.SUCCESS:
+        if self.bb.charge_done:
+            self.bb.was_charged = True
+            self.bb.charging_active = False
             return NodeStatus.SUCCESS
         self.bb.active_controller = "idle"
         self.bb.mission_phase = "charging"
@@ -253,8 +287,8 @@ class ChargingMissionTree:
         self.set_charging_arm(False)
         self.bb.active_controller = "post_stanley"
         self.bb.mission_phase = "exit_station"
-        self.bb.charge_voltage_reached_at = None
-        self.bb.need_charging = False
+        # self.bb.charge_voltage_reached_at = None
+        # self.bb.need_charging = False
         return NodeStatus.RUNNING
     
     def is_parked(self) -> str:
@@ -262,5 +296,6 @@ class ChargingMissionTree:
             self.bb.active_controller = "idle"
             self.bb.mission_phase = "parked"
             self.bb.was_charged = False
+            self.bb.vehicle_status = "parked_after_charge"
             return NodeStatus.SUCCESS
         return NodeStatus.FAILURE

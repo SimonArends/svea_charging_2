@@ -33,18 +33,21 @@ class bt_runner(rx.Node):
     tick_hz = rx.Parameter(20.0)
     switch_distance_m = rx.Parameter(2.5)
     docking_exit_distance_m = rx.Parameter(2.75)
-    dock_distance_m = rx.Parameter(0.622)
-    charge_start_voltage = rx.Parameter(12.2)
-    charge_done_voltage = rx.Parameter(12.6)
-    charge_voltage_confirm_s = rx.Parameter(3.0)
+    # dock_distance_m = rx.Parameter(0.622)
+    # charge_start_voltage = rx.Parameter(12.2)
+    # charge_done_voltage = rx.Parameter(12.6)
+    # charge_voltage_confirm_s = rx.Parameter(3.0)
     charging_arm_topic = rx.Parameter("charging_arm")
-    is_sim = rx.Parameter(False)
+    # is_sim = rx.Parameter(False)
+    action_topic = rx.Parameter("mission/action")
+    charge_done_topic = rx.Parameter("mission/charge_done")
+    vehicle_status_topic = rx.Parameter("mission/vehicle_status")
 
-    dist_to_goal_topic = rx.Parameter("dist_to_goal")
+    # dist_to_goal_topic = rx.Parameter("dist_to_goal")
     battery_charging_topic = rx.Parameter("mavros/battery")  
     stanley_status_topic = rx.Parameter("outdoor_stanley/status")
     transport_location_topic = rx.Parameter("outdoor_stanley/location")
-    charge_permission_topic = rx.Parameter("mission/charge_permission")
+    # charge_permission_topic = rx.Parameter("mission/charge_permission")
     cyl_dist_topic = rx.Parameter("cylinder_docking/cylinder_distance_m")
 
     active_controller_pub = rx.Publisher(String, "mission/active_controller", qos_pubber)
@@ -52,11 +55,20 @@ class bt_runner(rx.Node):
     tree_status_pub = rx.Publisher(String, "mission/tree_status", qos_pubber)
     charging_arm_pub = rx.Publisher(Bool, charging_arm_topic, qos_pubber)
     charging_status_pub = rx.Publisher(Bool, "mission/charging_status", qos_pubber)
-    need_charging_pub = rx.Publisher(Bool, "mission/need_charging", qos_pubber)
+    vehicle_status_pub = rx.Publisher(String, vehicle_status_topic, qos_pubber)
+    # need_charging_pub = rx.Publisher(Bool, "mission/need_charging", qos_pubber)
 
-    @rx.Subscriber(Float32, dist_to_goal_topic)
-    def _dist_to_goal_cb(self, msg: Float32):
-        self.bb.dist_to_station = float(msg.data)
+    # @rx.Subscriber(Float32, dist_to_goal_topic)
+    # def _dist_to_goal_cb(self, msg: Float32):
+    #     self.bb.dist_to_station = float(msg.data)
+
+    @rx.Subscriber(String, action_topic)
+    def _action_cb(self, msg: String):
+        self.bb.action = msg.data
+
+    @rx.Subscriber(Bool, charge_done_topic)
+    def _charge_done_cb(self, msg: Bool):
+        self.bb.charge_done = msg.data
     
     @rx.Subscriber(String, stanley_status_topic)
     def _stanley_status(self, msg: String):
@@ -81,19 +93,19 @@ class bt_runner(rx.Node):
         self.bb.battery_current = float(msg.current)
         self.bb.battery_voltage = float(msg.voltage)
 
-    @rx.Subscriber(Bool, charge_permission_topic, qos_pubber)
-    def _charge_permission_cb(self, msg: Bool):
-    	self.bb.charge_permission = msg.data
+    # @rx.Subscriber(Bool, charge_permission_topic, qos_pubber)
+    # def _charge_permission_cb(self, msg: Bool):
+    # 	self.bb.charge_permission = msg.data
     
     def on_startup(self):
         self.bb = MissionBlackboard(
             switch_distance_m=float(self.switch_distance_m),
             docking_exit_distance_m=float(self.docking_exit_distance_m),
-            dock_distance_m=float(self.dock_distance_m),
-            charge_start_voltage=float(self.charge_start_voltage),
-            charge_done_voltage=float(self.charge_done_voltage),
-            charge_voltage_confirm_s=float(self.charge_voltage_confirm_s),
-            is_sim=bool(self.is_sim),
+            # dock_distance_m=float(self.dock_distance_m),
+            # charge_start_voltage=float(self.charge_start_voltage),
+            # charge_done_voltage=float(self.charge_done_voltage),
+            # charge_voltage_confirm_s=float(self.charge_voltage_confirm_s),
+            # is_sim=bool(self.is_sim),
         )
         self.tree = ChargingMissionTree(self.bb, self._set_charging_arm)
         self._set_charging_arm(False)
@@ -102,11 +114,11 @@ class bt_runner(rx.Node):
         self.get_logger().info(
             "BT runner started "
             f"(switch={self.bb.switch_distance_m:.2f} m, "
-            f"exit={self.bb.docking_exit_distance_m:.2f} m, "
-            f"dock={self.bb.dock_distance_m:.2f} m, "
-            f"charge_start={self.bb.charge_start_voltage:.2f} V, "
-            f"charge_done={self.bb.charge_done_voltage:.2f} V, "
-            f"confirm={self.bb.charge_voltage_confirm_s:.1f} s)"
+            f"exit={self.bb.docking_exit_distance_m:.2f} m "
+            # f"dock={self.bb.dock_distance_m:.2f} m, "
+            # f"charge_start={self.bb.charge_start_voltage:.2f} V, "
+            # f"charge_done={self.bb.charge_done_voltage:.2f} V, "
+            # f"confirm={self.bb.charge_voltage_confirm_s:.1f} s)"
         )
 
     def _set_charging_arm(self, enabled: bool):
@@ -118,7 +130,8 @@ class bt_runner(rx.Node):
         self.phase_pub.publish(String(data=self.bb.mission_phase))
         self.tree_status_pub.publish(String(data=status))
         self.charging_status_pub.publish(Bool(data=self.bb.charging_active))
-        self.need_charging_pub.publish(Bool(data=self.bb.need_charging))
+        # self.need_charging_pub.publish(Bool(data=self.bb.need_charging))
+        self.vehicle_status_pub.publish(String(data=self.bb.vehicle_status))
 
 if __name__ == "__main__":
     bt_runner.main()

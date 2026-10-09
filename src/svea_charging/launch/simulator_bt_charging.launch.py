@@ -35,8 +35,8 @@ def main(
     bt_dock_distance_m: float = 0.6251276731491089,
     bt_switch_distance_m: float = 1.0, #the aruco is placed right in the charging point (origin) in simulation. An actual aruco would need to be somewhere else.
     bt_docking_exit_distance_m: float = 2.75,
-    bt_charge_start_voltage: float = 12.45, #lower gives more trips in transport mode, if you are close to charge done voltage you might always be charging.
-    bt_charge_done_voltage: float = 12.55,
+    bt_charge_start_voltage: float = 11.2, #lower gives more trips in transport mode, if you are close to charge done voltage you might always be charging.
+    bt_charge_done_voltage: float = 11.4,
     bt_charge_voltage_confirm_s: float = 3.0,
     stanley_target_velocity: float = 0.48, #gives approx 0.33 velocity commands by the Stanley. Stanley does not reach target. 
     stanley_turn_velocity: float = 0.3, 
@@ -139,6 +139,7 @@ def main(
                 name="outdoor_stanley",
                 param_files=route_config,
                 params=dict(
+                    svea_name=name,
                     enabled=enabled,
                     controller_name="stanley",
                     target_velocity=stanley_target_velocity,
@@ -154,6 +155,7 @@ def main(
                 name="transport_stanley",
                 param_files=transport_stanley_params,
                 params=dict(
+                    svea_name=name,
                     enabled=enabled,
                     controller_name="transport_stanley",
                     target_velocity=stanley_target_velocity,
@@ -170,6 +172,7 @@ def main(
                 name="post_stanley",
                 param_files=post_a_params,
                 params=dict(
+                    svea_name=name,
                     enabled=enabled,
                     controller_name="post_stanley",
                     target_velocity=stanley_target_velocity,
