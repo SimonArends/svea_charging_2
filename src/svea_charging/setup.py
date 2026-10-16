@@ -17,6 +17,7 @@ setup(
         (f'share/{name}/params', glob('params/*.yaml')),
         (f'share/{name}/params/routes', glob('params/routes/*.yaml')),
         (f'lib/{name}', glob('scripts/*.py')),
+        (f'lib/{name}', glob('scripts/management/*.py')),
         (os.path.join('share', name, 'launch'), glob(os.path.join('launch', '*launch.[pxy][yma]*'))),
     ],
     install_requires=['setuptools'],

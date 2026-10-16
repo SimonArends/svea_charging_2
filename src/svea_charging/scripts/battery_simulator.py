@@ -29,11 +29,11 @@ class battery_simulator(rx.Node):
     # Parameters
     battery_empty_voltage = rx.Parameter(10.0)
     battery_full_voltage = rx.Parameter(12.6)
-    # 900 mAh = 0.9 Ah
-    battery_capacity_ah = rx.Parameter(0.9)
-    battery_charge_current = rx.Parameter(1.5)
-    battery_discharge_current_stationary = rx.Parameter(-0.9)
-    battery_discharge_current_driving = rx.Parameter(-1.8)
+    # 8000 mAh = 8.0 Ah
+    battery_capacity_ah = rx.Parameter(8.0)
+    battery_charge_current = rx.Parameter(3.0)
+    battery_discharge_current_stationary = rx.Parameter(-2.0)
+    battery_discharge_current_driving = rx.Parameter(-4.5)
 
     battery_charging_topic = rx.Parameter("mavros/battery")
     drive_contol_topic = rx.Parameter("mavros/manual_control/send")
@@ -42,7 +42,7 @@ class battery_simulator(rx.Node):
     mission_phase_topic = rx.Parameter("mission/phase")
 
     # Battery update rate [Hz]
-    update_rate = rx.Parameter(10.0)
+    update_rate = rx.Parameter(1.0)
 
     # Publishers
     battery_pub = rx.Publisher(BatteryState, battery_charging_topic)
@@ -66,7 +66,7 @@ class battery_simulator(rx.Node):
     def docking_status_cb(self, msg: String):
         """ Update the docking status. """
         message = msg.data
-        self.docking_status = message in {"docked"}
+        self.docking_status = message in {"docked", "overshoot_recovery"}
 
     @rx.Subscriber(Bool, charging_status_topic, qos_pubber)
     def charging_status_cb(self, msg: Bool):
@@ -92,11 +92,11 @@ class battery_simulator(rx.Node):
         self.manual_control_z = msg.z
 
     # Battery simulation
-    @rx.Timer(0.1)
+    @rx.Timer(1.0)
     def update_battery(self):
         """ Update battery state and publish BatteryState. """
         # Determine current
-        if self.docking_status and (self.mission_phase == "docking" or self.mission_phase == "docked" or self.mission_phase == "charging"):
+        if (self.docking_status and (self.mission_phase == "docking" or self.mission_phase == "docked" or self.mission_phase == "charging" )) or self.charging_status:
             current = self.battery_charge_current
         elif self.manual_control_z < 490:
             current = self.battery_discharge_current_driving

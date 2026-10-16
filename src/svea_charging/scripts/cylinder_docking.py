@@ -123,7 +123,7 @@ class cylinder_docking(rx.Node):
 
     # --- Velocity PID Gains & Anti-Windup ---
     velocity_kp = rx.Parameter(0.5)               # Proportional gain for speed tracking error (desired_vel - measured_vel)
-    velocity_ki = rx.Parameter(0.01)               # Integral gain for steady-state speed tracking
+    velocity_ki = rx.Parameter(0.001)               # Integral gain for steady-state speed tracking ten times higher irl
     velocity_kd = rx.Parameter(0.0)                # Derivative gain to damp rapid speed oscillations
     velocity_integral_limit = rx.Parameter(0.4)    # Anti-windup cap applied to velocity error integrator
 

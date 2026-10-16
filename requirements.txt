@@ -19,3 +19,6 @@ pyserial
 pyubx2
 geopy
 utm
+
+# This is for the smart charging management optimization
+ortools==9.13.4784

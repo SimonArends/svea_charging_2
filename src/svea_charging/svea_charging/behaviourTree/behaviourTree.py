@@ -180,6 +180,8 @@ class ChargingMissionTree:
             return NodeStatus.FAILURE
         self.bb.active_controller = "transport_stanley"
         self.bb.mission_phase = "transport"
+        if self.bb.stanley_status == "running":
+            self.bb.vehicle_status = "transport_started"
         if self.bb.stanley_status == "goal_reached":
             self.bb.vehicle_status = "transport_done"
         return NodeStatus.RUNNING

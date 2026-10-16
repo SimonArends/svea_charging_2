@@ -30,7 +30,7 @@ def main(
     rtk_password: str = "171488",
     use_foxglove: bool = False,  #node is launched seperately when launching 2 SVEA's, this is the reason to have it false in general
     use_gps: bool = False,
-    docking_target_velocity: float = 0.09,
+    docking_target_velocity: float = 0.09, #0.09 rl, 0.05 sim. 
     dock_target_angle_deg: float = 85.0,
     bt_dock_distance_m: float = 0.6251276731491089,
     bt_switch_distance_m: float = 1.0, #the aruco is placed right in the charging point (origin) in simulation. An actual aruco would need to be somewhere else.
@@ -49,9 +49,15 @@ def main(
     map_pkg: str = 'svea_core',
     map_name: str = 'floor2',
     map_topic: str = '/map',
-    battery_charge_current: float = 19.5,
-    battery_discharge_current_stationary: float = -0.9,
-    battery_discharge_current_driving: float = -1.8,
+    battery_charge_current: float = 3.0,
+    battery_discharge_current_stationary: float = -2.0,
+    battery_discharge_current_driving: float = -4.5,
+    init_soc_a: float = 45,
+    init_soc_b: float = 40,
+    tasks_a: str = "180,90",
+    tasks_b: str = "90,90,90",
+    outages: str = "240:500",
+    controller: str = "STUPID",
 ):
 
     bl = BetterLaunch()
@@ -84,23 +90,25 @@ def main(
     bl.include("foxglove_bridge", "foxglove_bridge_launch.xml",
                    port=8765)
 
-    bl.node(
-        "svea_charging",
-        "automatic_scheduler.py",
-        name="automatic_scheduler",
-        params=dict(
-        charge_done_voltage = bt_charge_done_voltage,
-        charging_current = battery_charge_current,
-        idle_current = battery_discharge_current_stationary,
-        moving_current = battery_discharge_current_driving,
-        ),
-    )
+    # bl.node(
+    #     "svea_charging",
+    #     "automatic_scheduler.py",
+    #     name="automatic_scheduler",
+    #     params=dict(
+    #     charge_done_voltage = bt_charge_done_voltage,
+    #     charging_current = battery_charge_current,
+    #     idle_current = battery_discharge_current_stationary,
+    #     moving_current = battery_discharge_current_driving,
+    #     ),
+    # )
 
-    bl.node(
-        "svea_charging",
-        "performance_logger.py",
-        name="performance_logger",
-    )
+    # bl.node(
+    #     "svea_charging",
+    #     "performance_logger.py",
+    #     name="performance_logger",
+    # )
+
+
 
     INITIAL_POSES = {
     "svea_a": (-1.2, 0.0, 1.5, "A", "svea_b"),
@@ -232,3 +240,17 @@ def main(
                         battery_discharge_current_driving = battery_discharge_current_driving,
                     ),
                 )
+
+    bl.node(
+        "svea_charging",
+        "exp_runner.py",
+        name="exp_runner",
+        params=dict(
+            controller_name = controller,
+            initial_soc_pct_a = init_soc_a,
+            initial_soc_pct_b = init_soc_b,
+            tasks_a = tasks_a,
+            tasks_b = tasks_b,
+            outage_slots = outages,    
+        ),
+    )

@@ -100,15 +100,15 @@ class control_mux(rx.Node):
         self.cylinder_cmd.velocity = float(msg.data)
         self.cylinder_cmd.stamp_s = self._now_s()
 
-    @rx.Subscriber(Float32, "line_follower/cmd_steering_rad", qos_pubber)
-    def _line_steering_cb(self, msg: Float32):
-        self.line_cmd.steering = float(msg.data)
-        self.line_cmd.stamp_s = self._now_s()
+    # @rx.Subscriber(Float32, "line_follower/cmd_steering_rad", qos_pubber)
+    # def _line_steering_cb(self, msg: Float32):
+    #     self.line_cmd.steering = float(msg.data)
+    #     self.line_cmd.stamp_s = self._now_s()
 
-    @rx.Subscriber(Float32, "line_follower/cmd_velocity_mps", qos_pubber)
-    def _line_velocity_cb(self, msg: Float32):
-        self.line_cmd.velocity = float(msg.data)
-        self.line_cmd.stamp_s = self._now_s()
+    # @rx.Subscriber(Float32, "line_follower/cmd_velocity_mps", qos_pubber)
+    # def _line_velocity_cb(self, msg: Float32):
+    #     self.line_cmd.velocity = float(msg.data)
+    #     self.line_cmd.stamp_s = self._now_s()
 
     def on_startup(self):
         if self.is_sim:
@@ -217,8 +217,8 @@ class control_mux(rx.Node):
             return self._validated_command(self.stanley_cmd)
         if active == "cylinder_docking":
             return self._validated_command(self.cylinder_cmd)
-        if active == "line_follower":
-            return self._validated_command(self.line_cmd)
+        # if active == "line_follower":
+        #     return self._validated_command(self.line_cmd)
         if active == "post_stanley":
             return self._validated_command(self.stanley_cmd)
         return ControllerCommand()
