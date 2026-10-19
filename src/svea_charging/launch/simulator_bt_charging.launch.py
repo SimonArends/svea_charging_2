@@ -16,7 +16,7 @@ def main(
     is_sim: bool = True,
     name: str = "self",
     enabled: bool = True,
-    transport_start_location: str = "A",
+    # transport_start_location: str = "A",
     initial_pose_x: float = -1.2,
     initial_pose_y: float = 0.0,
     initial_pose_a: float = 1.5,
@@ -32,12 +32,12 @@ def main(
     use_gps: bool = False,
     docking_target_velocity: float = 0.09, #0.09 rl, 0.05 sim. 
     dock_target_angle_deg: float = 85.0,
-    bt_dock_distance_m: float = 0.6251276731491089,
+    # bt_dock_distance_m: float = 0.6251276731491089,
     bt_switch_distance_m: float = 1.0, #the aruco is placed right in the charging point (origin) in simulation. An actual aruco would need to be somewhere else.
     bt_docking_exit_distance_m: float = 2.75,
-    bt_charge_start_voltage: float = 11.2, #lower gives more trips in transport mode, if you are close to charge done voltage you might always be charging.
-    bt_charge_done_voltage: float = 11.4,
-    bt_charge_voltage_confirm_s: float = 3.0,
+    # bt_charge_start_voltage: float = 11.2, #lower gives more trips in transport mode, if you are close to charge done voltage you might always be charging.
+    # bt_charge_done_voltage: float = 11.4,
+    # bt_charge_voltage_confirm_s: float = 3.0,
     stanley_target_velocity: float = 0.48, #gives approx 0.33 velocity commands by the Stanley. Stanley does not reach target. 
     stanley_turn_velocity: float = 0.3, 
     stanley_max_steering_rad: float = 0.35, #something to adjust?
@@ -56,7 +56,7 @@ def main(
     init_soc_b: float = 45,
     tasks_a: str = "180,90",
     tasks_b: str = "90,90,90",
-    outages: str = "20:80, 170:320",
+    outages: str = "",
     controller: str = "ORACLE",
 ):
 
@@ -210,9 +210,9 @@ def main(
                 params=dict(
                     switch_distance_m=bt_switch_distance_m,
                     docking_exit_distance_m=bt_docking_exit_distance_m,
-                    charge_start_voltage=bt_charge_start_voltage,
-                    charge_done_voltage=bt_charge_done_voltage,
-                    charge_voltage_confirm_s=bt_charge_voltage_confirm_s,
+                    # charge_start_voltage=bt_charge_start_voltage,
+                    # charge_done_voltage=bt_charge_done_voltage,
+                    # charge_voltage_confirm_s=bt_charge_voltage_confirm_s,
                 ),
             )
 
