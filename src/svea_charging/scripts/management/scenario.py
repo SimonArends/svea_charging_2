@@ -5,8 +5,8 @@ import math
 import random
 
 BATTERY_MAS = 800 * 3600
-MIN_SOC_MAS = BATTERY_MAS // 10
-CHARGE_TARGET_MAS = MIN_SOC_MAS + 1 * BATTERY_MAS // 100
+MIN_SOC_MAS = BATTERY_MAS // 100 #10% for STUPID controller. 1 % for the others.
+CHARGE_TARGET_MAS = MIN_SOC_MAS + 10 * BATTERY_MAS // 100 #keep this at 11%
 DRIVE_MA = 4500
 CHARGE_MA = 3000
 WAIT_MA = 2000

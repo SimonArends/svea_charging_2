@@ -53,11 +53,11 @@ def main(
     battery_discharge_current_stationary: float = -2.0,
     battery_discharge_current_driving: float = -4.5,
     init_soc_a: float = 45,
-    init_soc_b: float = 40,
+    init_soc_b: float = 45,
     tasks_a: str = "180,90",
     tasks_b: str = "90,90,90",
-    outages: str = "240:500",
-    controller: str = "STUPID",
+    outages: str = "20:80",
+    controller: str = "ORACLE",
 ):
 
     bl = BetterLaunch()

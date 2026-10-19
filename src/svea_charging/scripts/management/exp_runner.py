@@ -90,7 +90,7 @@ class CompletedTask:
 class exp_runner(rx.Node):
     update_rate = rx.Parameter(1.0)
     controller_name = rx.Parameter("STUPID")
-    planner_time_limit = rx.Parameter(0.5)
+    planner_time_limit = rx.Parameter(0.9)
     initial_soc_pct_a = rx.Parameter(float(DEFAULT_INITIAL_SOCS[0]))
     initial_soc_pct_b = rx.Parameter(float(DEFAULT_INITIAL_SOCS[1]))
     tasks_a = rx.Parameter(",".join(str(value) for value in DEFAULT_TASKS[0]))
