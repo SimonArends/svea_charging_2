@@ -42,12 +42,22 @@ class Simulator:
             while v.task_idx < len(v.tasks) and v.tasks[v.task_idx] <= 0:
                 v.task_idx += 1
 
-    def snapshots(self):
+    def snapshots(self, flexible_charges=False):
         snapshots = []
         for v in self.vehicles.values():
             action = self.active.get(v.id)
             if action is None:
-                snapshots.append(VehicleSnapshot(v.id, v.soc, v.tasks, v.task_idx, v.location, v.busy_until))
+                snapshots.append(VehicleSnapshot(
+                    v.id, v.soc, v.tasks, v.task_idx, v.location, v.busy_until,
+                    charger_trip_started_at=self._charger_trip_started_at.get(v.id),
+                ))
+                continue
+            if flexible_charges and action.planned.kind == ActionType.CHARGE:
+                current_soc = action.soc_start + self._delta_soc(ActionType.CHARGE, self.time - action.start)
+                snapshots.append(VehicleSnapshot(
+                    v.id, current_soc, v.tasks, v.task_idx, v.location, self.time,
+                    current_soc, v.task_idx, "charger", charging=True,
+                ))
                 continue
             duration = action.end - action.start
             ready_soc = action.soc_start + self._delta_soc(action.planned.kind, duration)
@@ -57,11 +67,18 @@ class Simulator:
                 ready_location = "charger"
             elif action.planned.kind in (ActionType.DRIVE_FROM_CHARGER, ActionType.DELIVERY):
                 ready_location = "mission"
-            snapshots.append(VehicleSnapshot(v.id, v.soc, v.tasks, v.task_idx, v.location, v.busy_until, ready_soc, ready_task_idx, ready_location))
+            snapshots.append(VehicleSnapshot(
+                v.id, v.soc, v.tasks, v.task_idx, v.location, v.busy_until,
+                ready_soc, ready_task_idx, ready_location,
+                charger_trip_started_at=action.start if action.planned.kind == ActionType.DRIVE_TO_CHARGER else None,
+            ))
         return tuple(snapshots)
 
-    def charger_busy_until(self):
-        ends = [r.end for r in self.active.values() if r.planned.kind == ActionType.CHARGE]
+    def charger_busy_until(self, flexible_charges=False):
+        ends = [
+            r.end for r in self.active.values()
+            if r.planned.kind == ActionType.CHARGE and not flexible_charges
+        ]
         return max(ends, default=self.time)
 
     def knowledge(self):
@@ -75,13 +92,63 @@ class Simulator:
         return all(v.task_idx >= len(v.tasks) for v in self.vehicles.values()) and not self.active and not self.pending
 
     def replan(self):
-        if self.failure_reason or not self.free_with_work():
+        flexible_charges = self.controller.name in {"OPTIMIZER", "ORACLE"}
+        active_charges = any(
+            action.planned.kind == ActionType.CHARGE
+            for action in self.active.values()
+        )
+        if self.failure_reason or (not self.free_with_work() and not (flexible_charges and active_charges)):
             return
-        actions = self.controller.decide(self.time, self.snapshots(), self.charger_busy_until(), self.knowledge())
+        actions = self.controller.decide(
+            self.time,
+            self.snapshots(flexible_charges=flexible_charges),
+            self.charger_busy_until(flexible_charges=flexible_charges),
+            self.knowledge(),
+        )
         self.pending.clear()
+        flexible_vehicles = set()
+        if flexible_charges:
+            for action in actions:
+                active = self.active.get(action.vehicle)
+                if (
+                    active is None
+                    or active.planned.kind != ActionType.CHARGE
+                    or action.start != self.time
+                ):
+                    continue
+                flexible_vehicles.add(action.vehicle)
+                if action.kind == ActionType.CHARGE:
+                    active.end = action.end
+                    active.planned = action
+                    self.vehicles[action.vehicle].busy_until = action.end
+                elif action.kind == ActionType.DRIVE_FROM_CHARGER:
+                    vehicle = self.vehicles[action.vehicle]
+                    self.charger_time += self.time - active.start
+                    current_soc = active.soc_start + self._delta_soc(
+                        ActionType.CHARGE,
+                        self.time - active.start,
+                    )
+                    vehicle.soc = current_soc
+                    if self.time > active.start:
+                        completed_charge = ExecutedAction(
+                            action.vehicle,
+                            ActionType.CHARGE,
+                            active.start,
+                            self.time,
+                            active.soc_start,
+                            current_soc,
+                            active.planned.task_idx,
+                        )
+                        self.history.append(completed_charge)
+                        on_action_completed = getattr(self.controller, "on_action_completed", None)
+                        if on_action_completed is not None:
+                            on_action_completed(completed_charge)
+                    del self.active[action.vehicle]
+                    vehicle.busy_until = self.time
+                    self.pending[action.vehicle] = action
         free_ids = {v.id for v in self.free_with_work()}
         for a in actions:
-            if a.vehicle not in free_ids:
+            if a.vehicle not in free_ids or a.vehicle in flexible_vehicles:
                 continue
             if a.start != self.time or a.end <= a.start:
                 self.failure_reason = f"invalid controller action for V{a.vehicle}: {a}"

@@ -54,6 +54,16 @@ python run.py --sweep --seeds 20 --soc-range 70 100 --soc-range 70 100 --detaile
 The optimizer_time_limit is the CP-SAT budget for EACH replanning call:
 python run.py --scenario 1 --controller OPTIMIZER --planner-time-limit 0.5
 
+The optimizer enforces a 5% minimum SoC and penalizes each percentage point
+below 11%. Tune that objective weight with --soc-penalty-weight (default 1000)
+or the ROS parameter soc_penalty_weight. The default weight makes one
+percentage-point shortfall at one SoC checkpoint equivalent to one second of
+makespan in the objective.
+
+The objective also minimizes the sum of the vehicles' completion times, in
+addition to the longest completion time. Tune its relative weight with
+--total-time-weight (default 1) or the ROS parameter total_time_weight.
+
 Controller semantics
 --------------------
 STUPID applies a reserve-aware rule independently to each free vehicle. It
@@ -66,6 +76,9 @@ nominal work plus the drive away (or to full if that cannot fit in one battery).
 OPTIMIZER uses the same CP-SAT model on every rolling-horizon decision. It does
 NOT know future outages. The planner is initialized from the current SoC,
 location, remaining task index and remaining task durations.
+If a vehicle is already charging, OPTIMIZER and ORACLE may revise its charge
+duration at a replan until charge completion is signaled. The planner does not
+insert a wait at the charger; it may wait before starting the charger trip.
 
 ORACLE uses exactly the same planner, but supplies the complete future outage
 list.
@@ -83,12 +96,18 @@ realized SoC or task-duration differences can still make the fixed plan infeasib
 
 Outage rule
 -----------
-An outage prevents a NEW CHARGE from starting during the outage. It does NOT
-interrupt a charge that has already started. The optimizer waits before driving
-to the charger when it can predict unavailability; a wait at the charger is
-needed only if an outage begins during the drive. The CP-SAT charge constraint is:
-    charge_start < outage_start OR charge_start >= outage_end
-A charge may legally end after an outage begins.
+An outage prevents a new charge unless the vehicle started driving to the
+charger before that outage began. That committed trip may start charging during
+the outage, matching the simulator. Otherwise, charging may start at or after
+the outage ends. An outage does not interrupt a charge that has already
+started. Driving to or from the charger is allowed during an outage.
+
+The planner can wait before a charger trip to avoid an outage. Once the trip
+starts, it plans charging immediately on arrival; it does not plan a wait at
+the charger. The optimizer enforces at least 5% SoC throughout the sequence and
+adds a tunable objective penalty for SoC below 11% at action-boundary
+checkpoints. STUPID retains its existing MIN_SOC_MAS and CHARGE_TARGET_MAS
+rules.
 
 The simulator applies the same rule when an action actually starts. Driving to
 or from the charger is allowed during an outage.

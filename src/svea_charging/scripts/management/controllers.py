@@ -5,6 +5,8 @@ from scenario import ActionType, BATTERY_MAS, CHARGE_MA, CHARGE_TARGET_MAS, DEFA
 class Controller:
     name = "BASE"
     planner_time_limit = 0.9
+    soc_penalty_weight = 1000
+    total_time_weight = 1
     last_plan = ()
     def decide(self, now: int, vehicles: tuple[VehicleSnapshot, ...], charger_busy_until: int, knowledge: Knowledge) -> list[PlannedAction]:
         raise NotImplementedError
@@ -140,23 +142,42 @@ class OptimizerController(Controller):
     name = "OPTIMIZER"
     def decide(self, now, vehicles, charger_busy_until, knowledge):
         from planner import PlannerInput, first_actions, plan, planner_inputs
-        p = planner_inputs(now, vehicles, charger_busy_until, knowledge.observed_outages)
-        self.last_plan = tuple(plan(PlannerInput(p.now, p.vehicles, p.charger_busy_until, p.known_outages, self.planner_time_limit)))
+        p = planner_inputs(
+            now, vehicles, charger_busy_until, knowledge.observed_outages,
+            self.soc_penalty_weight, self.total_time_weight,
+        )
+        self.last_plan = tuple(plan(PlannerInput(
+            p.now, p.vehicles, p.charger_busy_until, p.known_outages,
+            self.planner_time_limit,
+            soc_penalty_weight=self.soc_penalty_weight,
+            total_time_weight=self.total_time_weight,
+        )))
         return first_actions(list(self.last_plan), now)
 
 class OracleController(OptimizerController):
     name = "ORACLE"
     def decide(self, now, vehicles, charger_busy_until, knowledge):
         from planner import PlannerInput, first_actions, plan, planner_inputs
-        p = planner_inputs(now, vehicles, charger_busy_until, knowledge.all_outages)
-        self.last_plan = tuple(plan(PlannerInput(p.now, p.vehicles, p.charger_busy_until, p.known_outages, self.planner_time_limit)))
+        p = planner_inputs(
+            now, vehicles, charger_busy_until, knowledge.all_outages,
+            self.soc_penalty_weight, self.total_time_weight,
+        )
+        self.last_plan = tuple(plan(PlannerInput(
+            p.now, p.vehicles, p.charger_busy_until, p.known_outages,
+            self.planner_time_limit,
+            soc_penalty_weight=self.soc_penalty_weight,
+            total_time_weight=self.total_time_weight,
+        )))
         return first_actions(list(self.last_plan), now)
 
 class StaticOptimalController(Controller):
     name = "STATIC_OPTIMAL"
 
-    def __init__(self, initial_socs=DEFAULT_INITIAL_SOCS, tasks=DEFAULT_TASKS):
+    def __init__(self, initial_socs=DEFAULT_INITIAL_SOCS, tasks=DEFAULT_TASKS, soc_penalty_weight=1000, total_time_weight=1):
         from planner import PlannerInput, VehicleInput, plan
+
+        self.soc_penalty_weight = int(soc_penalty_weight)
+        self.total_time_weight = int(total_time_weight)
 
         nominal_vehicles = tuple(
             VehicleInput(
@@ -170,7 +191,11 @@ class StaticOptimalController(Controller):
             )
             for index in range(len(tasks))
         )
-        self.schedule = tuple(plan(PlannerInput(0, nominal_vehicles, 0, (), 30.0, 1)))
+        self.schedule = tuple(plan(PlannerInput(
+            0, nominal_vehicles, 0, (), 30.0, 1,
+            soc_penalty_weight=self.soc_penalty_weight,
+            total_time_weight=self.total_time_weight,
+        )))
         self.last_plan = self.schedule
         if not self.schedule:
             raise RuntimeError("Static nominal CP-SAT plan could not be computed")

@@ -5,15 +5,15 @@ import math
 import random
 
 BATTERY_MAS = 800 * 3600
-MIN_SOC_MAS = BATTERY_MAS // 100 #10% for STUPID controller. 1 % for the others.
-CHARGE_TARGET_MAS = MIN_SOC_MAS + 10 * BATTERY_MAS // 100 #keep this at 11%
+MIN_SOC_MAS = BATTERY_MAS // 10 # 10% floor used by STUPID.
+CHARGE_TARGET_MAS = MIN_SOC_MAS + 1 * BATTERY_MAS // 100 # 11% margin used by STUPID.
 DRIVE_MA = 4500
 CHARGE_MA = 3000
 WAIT_MA = 2000
 TO_CHARGER_S = 45
 FROM_CHARGER_S = 45
-DEFAULT_INITIAL_SOCS = (60, 80)
-DEFAULT_TASKS = ((270, 180, 90), (90, 180, 270))
+DEFAULT_INITIAL_SOCS = (45, 45)
+DEFAULT_TASKS = ((180, 90), (90, 90, 90))
 
 class ActionType(str, Enum):
     DELIVERY = "DELIVERY"
@@ -65,6 +65,8 @@ class VehicleSnapshot:
     ready_soc: int | None = None
     ready_task_idx: int | None = None
     ready_location: str | None = None
+    charging: bool = False
+    charger_trip_started_at: int | None = None
 
 @dataclass(frozen=True)
 class PlannedAction:
@@ -109,7 +111,7 @@ def outage_at(t: int, outages: tuple[Outage, ...] | list[Outage]) -> Outage | No
             return o
     return None
 
-def make_scenario(seed: int, initial_socs=DEFAULT_INITIAL_SOCS, tasks=DEFAULT_TASKS, outage_mean=600.0, outage_min=10, outage_max=600, outage_horizon=2000, delivery_sigma=0.1, initial_soc_ranges=None) -> Scenario:
+def make_scenario(seed: int, initial_socs=DEFAULT_INITIAL_SOCS, tasks=DEFAULT_TASKS, outage_mean=600.0, outage_min=10, outage_max=600, outage_horizon=2000, delivery_sigma=0.0, initial_soc_ranges=None) -> Scenario:
     rng = random.Random(seed)
     if initial_soc_ranges is None:
         resolved_socs = initial_socs

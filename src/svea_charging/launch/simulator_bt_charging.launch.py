@@ -56,7 +56,7 @@ def main(
     init_soc_b: float = 45,
     tasks_a: str = "180,90",
     tasks_b: str = "90,90,90",
-    outages: str = "20:80",
+    outages: str = "20:80, 170:320",
     controller: str = "ORACLE",
 ):
 

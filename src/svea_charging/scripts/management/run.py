@@ -41,11 +41,16 @@ def print_result(r: Result):
         for a in sorted(r.actions, key=lambda x: (x.start, x.vehicle, x.end)):
             print(f"t={a.start:4d}-{a.end:4d} V{a.vehicle} {a.kind.value:<20} SoC {soc_pct(a.soc_start):6.2f}% -> {soc_pct(a.soc_end):6.2f}%")
 
-def single(seed, only=None, verbose=True, planner_time_limit=5.20, initial_soc_ranges=None, detailed=False):
+def single(seed, only=None, verbose=True, planner_time_limit=5.20, initial_soc_ranges=None, detailed=False, soc_penalty_weight=1000, total_time_weight=1):
     classes = [c for c in CONTROLLERS if only is None or c.name == only]
-    controllers = [cls() for cls in classes]
+    controllers = [
+        cls(soc_penalty_weight=soc_penalty_weight, total_time_weight=total_time_weight) if cls is StaticOptimalController else cls()
+        for cls in classes
+    ]
     for c in controllers:
         c.planner_time_limit = planner_time_limit
+        c.soc_penalty_weight = soc_penalty_weight
+        c.total_time_weight = total_time_weight
     s = make_scenario(seed, initial_soc_ranges=initial_soc_ranges)
     print_scenario(s, detailed=detailed)
     results = []
@@ -55,9 +60,12 @@ def single(seed, only=None, verbose=True, planner_time_limit=5.20, initial_soc_r
         results.append(r)
     return results
 
-def sweep(n, planner_time_limit=0.20, initial_soc_ranges=None, detailed=False):
+def sweep(n, planner_time_limit=0.20, initial_soc_ranges=None, detailed=False, soc_penalty_weight=1000, total_time_weight=1):
     rows = []
-    controllers = [cls() for cls in CONTROLLERS]
+    controllers = [
+        cls(soc_penalty_weight=soc_penalty_weight, total_time_weight=total_time_weight) if cls is StaticOptimalController else cls()
+        for cls in CONTROLLERS
+    ]
     for seed in range(1, n + 1):
         s = make_scenario(seed, initial_soc_ranges=initial_soc_ranges)
         for c in controllers:
@@ -65,6 +73,8 @@ def sweep(n, planner_time_limit=0.20, initial_soc_ranges=None, detailed=False):
             if reset is not None:
                 reset()
             c.planner_time_limit = planner_time_limit
+            c.soc_penalty_weight = soc_penalty_weight
+            c.total_time_weight = total_time_weight
             r = Simulator(s, c, verbose=False).run()
             row = {"seed": seed, "controller": r.controller, "completed": r.completed, "makespan_s": r.makespan, "total_waiting_time_s": r.total_waiting_time, "transport_time_fraction": r.transport_time_fraction, "charger_utilization": r.charger_utilization, "charging_visits": r.charging_visits, "failure_reason": r.failure_reason or ""}
             if detailed:
@@ -81,12 +91,21 @@ if __name__ == "__main__":
     p.add_argument("--controller", choices=[c.name for c in CONTROLLERS])
     p.add_argument("--sweep", action="store_true")
     p.add_argument("--seeds", type=int, default=10)
-    p.add_argument("--planner-time-limit", type=float, default=0.50, help="CP-SAT time budget per replanning call in seconds")
+    p.add_argument("--planner-time-limit", type=float, default=0.90, help="CP-SAT time budget per replanning call in seconds")
+    p.add_argument("--soc-penalty-weight", type=int, default=50000, help="Objective cost per percentage point below 11% SoC")
+    p.add_argument("--total-time-weight", type=int, default=100, help="Objective weight for the sum of vehicle completion times")
     p.add_argument("--soc-range", action="append", nargs=2, type=float, metavar=("MIN", "MAX"), help="Random initial SoC range for one vehicle; repeat once per vehicle")
     p.add_argument("--detailed", action="store_true", help="Include scenario metadata and exact task durations in output")
     a = p.parse_args()
     soc_ranges = tuple(tuple(bounds) for bounds in a.soc_range) if a.soc_range else None
     if a.sweep:
-        sweep(a.seeds, a.planner_time_limit, soc_ranges, a.detailed)
+        sweep(a.seeds, a.planner_time_limit, soc_ranges, a.detailed, a.soc_penalty_weight, a.total_time_weight)
     else:
-        single(a.scenario, a.controller, planner_time_limit=a.planner_time_limit, initial_soc_ranges=soc_ranges, detailed=a.detailed)
+        single(
+            a.scenario, a.controller,
+            planner_time_limit=a.planner_time_limit,
+            initial_soc_ranges=soc_ranges,
+            detailed=a.detailed,
+            soc_penalty_weight=a.soc_penalty_weight,
+            total_time_weight=a.total_time_weight,
+        )

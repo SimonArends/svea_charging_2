@@ -68,8 +68,10 @@ class VehicleRuntime:
     wait_until: float | None = None
     charge_target: float | None = None
     charge_deadline: float | None = None
+    charge_departure_end: int | None = None
     charge_done_sent: bool = False
     resume_action: PlannedAction | None = None
+    charger_trip_started_at: int | None = None
     transport_armed: bool = True
     action_soc_start: float | None = None
     transport_length: str | None = None
@@ -91,6 +93,8 @@ class exp_runner(rx.Node):
     update_rate = rx.Parameter(1.0)
     controller_name = rx.Parameter("STUPID")
     planner_time_limit = rx.Parameter(0.9)
+    soc_penalty_weight = rx.Parameter(50000)
+    total_time_weight = rx.Parameter(100)
     initial_soc_pct_a = rx.Parameter(float(DEFAULT_INITIAL_SOCS[0]))
     initial_soc_pct_b = rx.Parameter(float(DEFAULT_INITIAL_SOCS[1]))
     tasks_a = rx.Parameter(",".join(str(value) for value in DEFAULT_TASKS[0]))
@@ -146,6 +150,8 @@ class exp_runner(rx.Node):
         self._outages = self._parse_outages(str(self.outage_slots))
         self._controller = self._make_controller()
         self._controller.planner_time_limit = float(self.planner_time_limit)
+        self._controller.soc_penalty_weight = int(self.soc_penalty_weight)
+        self._controller.total_time_weight = int(self.total_time_weight)
         self._publishers = {
             1: (self.action_pub_a, self.tr_length_pub_a, self.charge_complete_pub_a),
             2: (self.action_pub_b, self.tr_length_pub_b, self.charge_complete_pub_b),
@@ -178,6 +184,10 @@ class exp_runner(rx.Node):
         self._tasks_b = self._parse_tasks(str(self.tasks_b), "tasks_b")
         if float(self.planner_time_limit) <= 0:
             raise ValueError("planner_time_limit must be positive")
+        if int(self.soc_penalty_weight) < 0:
+            raise ValueError("soc_penalty_weight must not be negative")
+        if int(self.total_time_weight) < 0:
+            raise ValueError("total_time_weight must not be negative")
 
     @staticmethod
     def _parse_tasks(value: str, name: str) -> tuple[int, ...]:
@@ -222,6 +232,8 @@ class exp_runner(rx.Node):
             return StaticOptimalController(
                 initial_socs=(self._initial_soc_a, self._initial_soc_b),
                 tasks=(self._tasks_a, self._tasks_b),
+                    soc_penalty_weight=int(self.soc_penalty_weight),
+                total_time_weight=int(self.total_time_weight),
             )
         return classes[name]()
 
@@ -423,12 +435,13 @@ class exp_runner(rx.Node):
         active_actions = []
         for runtime in self._runtimes.values():
             if runtime.command == "charge_cycle" and runtime.charge_done_sent:
+                departure_end = runtime.charge_departure_end or elapsed + 45
                 active_actions.append(
                     PlannedAction(
                         runtime.vehicle_id,
                         ActionType.DRIVE_FROM_CHARGER,
-                        elapsed,
-                        elapsed + 45,
+                        departure_end - 45,
+                        departure_end,
                         runtime.task_idx,
                     )
                 )
@@ -504,7 +517,12 @@ class exp_runner(rx.Node):
         observed = tuple(outage for outage in self._outages if outage.start <= elapsed)
         return Knowledge(observed, self._outages)
 
-    def _charge_busy_until(self, now: int, planning_vehicle: int | None = None) -> int:
+    def _charge_busy_until(
+        self,
+        now: int,
+        planning_vehicle: int | None = None,
+        flexible_charges: bool = False,
+    ) -> int:
         busy_until = now
         for runtime in self._runtimes.values():
             if runtime.vehicle_id == planning_vehicle or runtime.command != "charge_cycle":
@@ -512,6 +530,8 @@ class exp_runner(rx.Node):
             if runtime.charge_done_sent or runtime.status == "parked_after_charge":
                 continue
             if runtime.status == "docked" and runtime.charge_target is None:
+                continue
+            if flexible_charges and runtime.status == "docked" and runtime.charge_target is not None:
                 continue
             if runtime.status == "docked" and runtime.charge_target is not None:
                 remaining = max(
@@ -527,7 +547,7 @@ class exp_runner(rx.Node):
                 busy_until = max(busy_until, now + 45)
         return busy_until
 
-    def _snapshots(self, now: int) -> tuple[VehicleSnapshot, ...]:
+    def _snapshots(self, now: int, flexible_charges: bool = False) -> tuple[VehicleSnapshot, ...]:
         snapshots = []
         monotonic_now = time.monotonic()
         for runtime in self._runtimes.values():
@@ -537,6 +557,8 @@ class exp_runner(rx.Node):
             ready_soc = int(round(runtime.soc * BATTERY_MAS / 100.0))
             ready_task_idx = runtime.task_idx
             ready_location = runtime.location
+            charging = False
+            charger_trip_started_at = runtime.charger_trip_started_at
 
             if runtime.wait_until is not None:
                 remaining = max(0.0, runtime.wait_until - monotonic_now)
@@ -552,19 +574,26 @@ class exp_runner(rx.Node):
                 ready_location = "mission"
             elif runtime.command == "charge_cycle":
                 if runtime.charge_done_sent:
-                    remaining = 45.0
-                    ready_soc -= 45 * 4500
+                    departure_end = runtime.charge_departure_end or now + 45
+                    remaining = max(0, departure_end - now)
+                    ready_soc -= remaining * 4500
                     ready_location = "mission"
                 elif runtime.status == "docked" and runtime.charge_target is not None:
-                    charge_remaining = max(
-                        0.0,
-                        (runtime.charge_target - runtime.soc)
-                        * BATTERY_MAS
-                        / (100.0 * CHARGE_MA),
-                    )
-                    remaining = charge_remaining + 45.0
-                    ready_soc = int(round(runtime.charge_target * BATTERY_MAS / 100.0)) - 45 * 4500
-                    ready_location = "mission"
+                    if flexible_charges:
+                        remaining = 0.0
+                        ready_soc = int(round(runtime.soc * BATTERY_MAS / 100.0))
+                        ready_location = "charger"
+                        charging = True
+                    else:
+                        charge_remaining = max(
+                            0.0,
+                            (runtime.charge_target - runtime.soc)
+                            * BATTERY_MAS
+                            / (100.0 * CHARGE_MA),
+                        )
+                        remaining = charge_remaining + 45.0
+                        ready_soc = int(round(runtime.charge_target * BATTERY_MAS / 100.0)) - 45 * 4500
+                        ready_location = "mission"
                 elif runtime.status == "docked":
                     remaining = 0.0
                     ready_location = "charger"
@@ -578,6 +607,8 @@ class exp_runner(rx.Node):
                     remaining = max(0.0, finish_at - monotonic_now)
                     ready_soc -= int(round(remaining * 4500))
                     ready_location = "charger"
+                    if runtime.action is not None and runtime.action.kind == ActionType.DRIVE_TO_CHARGER:
+                        charger_trip_started_at = self._elapsed(runtime.action_started_at or monotonic_now)
                 busy_until = now + int(math.ceil(remaining))
 
             snapshots.append(
@@ -591,6 +622,8 @@ class exp_runner(rx.Node):
                     max(0, min(BATTERY_MAS, ready_soc)),
                     ready_task_idx,
                     ready_location,
+                    charging,
+                    charger_trip_started_at,
                 )
             )
         return tuple(snapshots)
@@ -665,12 +698,14 @@ class exp_runner(rx.Node):
 
     def _start_charge_cycle(self, runtime: VehicleRuntime, action: PlannedAction, now: float):
         self._start_experiment(now)
+        runtime.charger_trip_started_at = self._elapsed(now)
         runtime.command = "charge_cycle"
         runtime.action = action
         runtime.action_started_at = now
         runtime.location = "mission"
         runtime.charge_target = None
         runtime.charge_deadline = None
+        runtime.charge_departure_end = None
         runtime.charge_done_sent = False
         runtime.resume_action = None
         self._publish_charge_complete(runtime.vehicle_id, False)
@@ -711,6 +746,9 @@ class exp_runner(rx.Node):
         elif action.kind == ActionType.CHARGE:
             if runtime.command == "charge_cycle" and runtime.status == "docked":
                 self._start_charging(runtime, action, now)
+        elif action.kind == ActionType.DRIVE_FROM_CHARGER:
+            if runtime.command == "charge_cycle" and runtime.status == "docked":
+                self._send_charge_complete(runtime)
         elif action.kind == ActionType.WAIT:
             if runtime.command == "charge_cycle" and runtime.status == "docked":
                 self._begin_charger_wait(runtime, action, now)
@@ -719,7 +757,8 @@ class exp_runner(rx.Node):
 
     def _replan(self, now: float):
         elapsed = self._elapsed(now)
-        snapshots = self._snapshots(elapsed)
+        flexible_charges = self._controller.name in {"OPTIMIZER", "ORACLE"}
+        snapshots = self._snapshots(elapsed, flexible_charges=flexible_charges)
         if not snapshots:
             self._latest_plan_actions = ()
             if self._controller.name != "STATIC_OPTIMAL":
@@ -728,7 +767,10 @@ class exp_runner(rx.Node):
         actions = self._controller.decide(
             elapsed,
             snapshots,
-            self._charge_busy_until(elapsed),
+            self._charge_busy_until(
+                elapsed,
+                flexible_charges=flexible_charges,
+            ),
             self._knowledge(elapsed),
         )
         self._latest_plan_actions = tuple(actions)
@@ -736,7 +778,17 @@ class exp_runner(rx.Node):
             runtime = self._runtimes.get(action.vehicle)
             if runtime is None or runtime.status is None:
                 continue
-            at_charge_decision = runtime.command == "charge_cycle" and runtime.status == "docked" and runtime.charge_target is None
+            at_charge_decision = (
+                runtime.command == "charge_cycle"
+                and runtime.status == "docked"
+                and (
+                    runtime.charge_target is None
+                    or (
+                        self._controller.name in {"OPTIMIZER", "ORACLE"}
+                        and not runtime.charge_done_sent
+                    )
+                )
+            )
             at_charge_decision = at_charge_decision and runtime.wait_until is None
             if runtime.command is not None and not at_charge_decision:
                 continue
@@ -771,11 +823,13 @@ class exp_runner(rx.Node):
     def _send_charge_complete(self, runtime: VehicleRuntime):
         if runtime.charge_done_sent:
             return
+        now = time.monotonic()
         runtime.charge_done_sent = True
+        runtime.charge_departure_end = self._elapsed(now) + 45
+        runtime.charger_trip_started_at = None
         self._publish_charge_complete(runtime.vehicle_id, True)
         if runtime.action is not None and runtime.action.kind == ActionType.CHARGE:
             self._notify_action_completed(runtime.action, self._elapsed(time.monotonic()))
-        now = time.monotonic()
         for waiting_runtime in self._runtimes.values():
             if waiting_runtime.command == "wait" and waiting_runtime.wait_until is not None:
                 self._finish_wait(waiting_runtime, now)
@@ -799,7 +853,7 @@ class exp_runner(rx.Node):
         drive_from = PlannedAction(
             runtime.vehicle_id,
             ActionType.DRIVE_FROM_CHARGER,
-            self._elapsed(runtime.action_started_at or now),
+            runtime.charge_departure_end - 45 if runtime.charge_departure_end is not None else self._elapsed(now),
             self._elapsed(now),
             runtime.task_idx,
         )
@@ -811,6 +865,7 @@ class exp_runner(rx.Node):
         runtime.action_started_at = None
         runtime.charge_target = None
         runtime.charge_deadline = None
+        runtime.charge_departure_end = None
         runtime.charge_done_sent = False
         runtime.resume_action = None
         runtime.location = "mission"
@@ -832,7 +887,12 @@ class exp_runner(rx.Node):
 
     def _process_charging(self, now: float):
         for runtime in self._runtimes.values():
-            if runtime.command != "charge_cycle" or runtime.status != "docked" or runtime.charge_target is None:
+            if (
+                runtime.command != "charge_cycle"
+                or runtime.status != "docked"
+                or runtime.charge_target is None
+                or runtime.charge_done_sent
+            ):
                 continue
             if runtime.soc >= runtime.charge_target:
                 self._send_charge_complete(runtime)
