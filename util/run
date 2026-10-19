@@ -7,7 +7,7 @@ ARGS="$@"
 if isempty ARGS; then
     ARGS="--name $CONTAINER_NAME"
 fi
-
+###### comment lines 15 to 28 to not have to have a zenoh server running. 
 # ------------------------------------------------------------------
 # ROS 2 / Zenoh configuration
 # ------------------------------------------------------------------
@@ -15,7 +15,8 @@ fi
 append ARGS \
     -e "TERM=xterm-256color" \
     -e "RMW_IMPLEMENTATION=rmw_zenoh_cpp" \
-    -e "ROS_DOMAIN_ID=0"
+    -e "ROS_DOMAIN_ID=0" \
+    -e "RUST_LOG=off" \
 
 # WSL: connect to the Linux Zenoh router.
 # Native Linux host: don't force a Zenoh client configuration.

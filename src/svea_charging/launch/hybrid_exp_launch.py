@@ -60,7 +60,7 @@ def main(
     tasks_a: str = "180,90",
     tasks_b: str = "90,90,90",
     outages: str = "",
-    controller: str = "ORACLE",
+    controller: str = "OPTIMIZER",
 ):
 
     bl = BetterLaunch()
@@ -168,12 +168,13 @@ def main(
                 name="outdoor_stanley",
                 param_files=route_config,
                 params=dict(
+                    is_sim = sim,
+                    svea_name=name,
                     enabled=enabled,
                     controller_name="stanley",
                     target_velocity=stanley_target_velocity,
                     turn_velocity=stanley_turn_velocity,
                     max_steering_rad=stanley_max_steering_rad,
-                    is_sim=sim,
                     **{"localization/base_frame": f"{name}/base_link"},
                 ),
             )
@@ -184,13 +185,13 @@ def main(
                 name="transport_stanley",
                 param_files=transport_stanley_params,
                 params=dict(
+                    is_sim = sim,
+                    svea_name=name,
                     enabled=enabled,
                     controller_name="transport_stanley",
                     target_velocity=stanley_target_velocity,
                     turn_velocity=stanley_turn_velocity,
                     max_steering_rad=stanley_max_steering_rad,
-                    location=start_loc,
-                    is_sim=sim,
                     **{"localization/base_frame": f"{name}/base_link"},
                 ),
             )
@@ -201,12 +202,13 @@ def main(
                 name="post_stanley",
                 param_files=post_a_params,
                 params=dict(
+                    is_sim = sim,
+                    svea_name=name,
                     enabled=enabled,
                     controller_name="post_stanley",
                     target_velocity=stanley_target_velocity,
                     turn_velocity=stanley_turn_velocity,
                     max_steering_rad=stanley_max_steering_rad,
-                    is_sim=sim,
                     **{"localization/base_frame": f"{name}/base_link"},
                 ),
             )
@@ -276,7 +278,7 @@ def main(
                     ),
                 )
     
-    if is_sim:
+    if not is_sim:
         bl.node(
             "svea_charging",
             "exp_runner.py",
