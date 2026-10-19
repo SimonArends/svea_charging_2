@@ -8,6 +8,7 @@ class Controller:
     soc_penalty_weight = 1000
     total_time_weight = 1
     last_plan = ()
+    last_plan_stale = False
     def decide(self, now: int, vehicles: tuple[VehicleSnapshot, ...], charger_busy_until: int, knowledge: Knowledge) -> list[PlannedAction]:
         raise NotImplementedError
 
@@ -146,13 +147,21 @@ class OptimizerController(Controller):
             now, vehicles, charger_busy_until, knowledge.observed_outages,
             self.soc_penalty_weight, self.total_time_weight,
         )
-        self.last_plan = tuple(plan(PlannerInput(
+        candidate = tuple(plan(PlannerInput(
             p.now, p.vehicles, p.charger_busy_until, p.known_outages,
             self.planner_time_limit,
             soc_penalty_weight=self.soc_penalty_weight,
             total_time_weight=self.total_time_weight,
         )))
-        return first_actions(list(self.last_plan), now)
+        if candidate:
+            self.last_plan = candidate
+            self.last_plan_stale = False
+        elif p.vehicles:
+            self.last_plan_stale = True
+        else:
+            self.last_plan = ()
+            self.last_plan_stale = False
+        return first_actions(list(candidate), now)
 
 class OracleController(OptimizerController):
     name = "ORACLE"
@@ -162,13 +171,21 @@ class OracleController(OptimizerController):
             now, vehicles, charger_busy_until, knowledge.all_outages,
             self.soc_penalty_weight, self.total_time_weight,
         )
-        self.last_plan = tuple(plan(PlannerInput(
+        candidate = tuple(plan(PlannerInput(
             p.now, p.vehicles, p.charger_busy_until, p.known_outages,
             self.planner_time_limit,
             soc_penalty_weight=self.soc_penalty_weight,
             total_time_weight=self.total_time_weight,
         )))
-        return first_actions(list(self.last_plan), now)
+        if candidate:
+            self.last_plan = candidate
+            self.last_plan_stale = False
+        elif p.vehicles:
+            self.last_plan_stale = True
+        else:
+            self.last_plan = ()
+            self.last_plan_stale = False
+        return first_actions(list(candidate), now)
 
 class StaticOptimalController(Controller):
     name = "STATIC_OPTIMAL"

@@ -429,6 +429,8 @@ class exp_runner(rx.Node):
         elif self._controller.name in {"OPTIMIZER", "ORACLE"}:
             plan_actions = self._controller.last_plan
             plan_label = f"{self._controller.name} full remaining plan"
+            if self._controller.last_plan_stale:
+                plan_label += " (last feasible; latest replan failed)"
         else:
             plan_actions = self._latest_plan_actions
             plan_label = "Latest immediate plan"
@@ -763,6 +765,7 @@ class exp_runner(rx.Node):
             self._latest_plan_actions = ()
             if self._controller.name != "STATIC_OPTIMAL":
                 self._controller.last_plan = ()
+                self._controller.last_plan_stale = False
             return
         actions = self._controller.decide(
             elapsed,
