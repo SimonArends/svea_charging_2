@@ -55,12 +55,12 @@ def main(
     battery_discharge_current_driving: float = -4.5,
     ## LiDAR
     lidar_ip: str = "192.168.0.10",
-    init_soc_a: float = 45,
-    init_soc_b: float = 45,
-    tasks_a: str = "180,90",
-    tasks_b: str = "90,90,90",
+    init_soc_a: float = 90,
+    init_soc_b: float = 90,
+    tasks_a: str = "270,180,90",
+    tasks_b: str = "90,180,270",
     outages: str = "",
-    controller: str = "OPTIMIZER",
+    controller: str = "STATIC_OPTIMAL",
 ):
 
     bl = BetterLaunch()
@@ -175,6 +175,7 @@ def main(
                     target_velocity=stanley_target_velocity,
                     turn_velocity=stanley_turn_velocity,
                     max_steering_rad=stanley_max_steering_rad,
+                    max_velocity = 0.4,
                     **{"localization/base_frame": f"{name}/base_link"},
                 ),
             )
@@ -192,6 +193,7 @@ def main(
                     target_velocity=stanley_target_velocity,
                     turn_velocity=stanley_turn_velocity,
                     max_steering_rad=stanley_max_steering_rad,
+                    max_velocity = 0.4,
                     **{"localization/base_frame": f"{name}/base_link"},
                 ),
             )
@@ -209,6 +211,7 @@ def main(
                     target_velocity=stanley_target_velocity,
                     turn_velocity=stanley_turn_velocity,
                     max_steering_rad=stanley_max_steering_rad,
+                    max_velocity = 0.4,
                     **{"localization/base_frame": f"{name}/base_link"},
                 ),
             )

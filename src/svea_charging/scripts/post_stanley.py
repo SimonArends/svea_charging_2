@@ -42,6 +42,7 @@ class OutdoorStanley(rx.Node):
     enabled = rx.Parameter(False)
     target_velocity = rx.Parameter(0.28)
     turn_velocity = rx.Parameter(0.12)
+    max_velocity = rx.Parameter(0.4)
     max_steering_rad = rx.Parameter(0.45)
     goal_tolerance = rx.Parameter(0.75)
     start_tolerance = rx.Parameter(1.0)
@@ -186,7 +187,7 @@ class OutdoorStanley(rx.Node):
         self.viz_counter = 0
         self.controller = StanleyController(node=self)
         self.controller.target_velocity = float(self.target_velocity)
-
+        self.controller.max_velocity = float(self.max_velocity)
 
         # map_waypoints (A -> charger) and map_waypoints_b_to_charge (B -> charger)
         # are two independent routes, each parsed once.

@@ -39,7 +39,7 @@ def main(
     # bt_charge_done_voltage: float = 11.4,
     # bt_charge_voltage_confirm_s: float = 3.0,
     stanley_target_velocity: float = 0.48, #gives approx 0.33 velocity commands by the Stanley. Stanley does not reach target. 
-    stanley_turn_velocity: float = 0.3, 
+    stanley_turn_velocity: float = 0.48, 
     stanley_max_steering_rad: float = 0.35, #something to adjust?
     control_mux_timeout_s: float = 1.0,
     post_a_params = "",
@@ -153,6 +153,7 @@ def main(
                     target_velocity=stanley_target_velocity,
                     turn_velocity=stanley_turn_velocity,
                     max_steering_rad=stanley_max_steering_rad,
+                    max_velocity = 0.6,
                     **{"localization/base_frame": f"{name}/base_link"},
                 ),
             )
@@ -170,6 +171,7 @@ def main(
                     turn_velocity=stanley_turn_velocity,
                     max_steering_rad=stanley_max_steering_rad,
                     location=start_loc,
+                    max_velocity = 0.6,
                     **{"localization/base_frame": f"{name}/base_link"},
                 ),
             )
@@ -186,6 +188,7 @@ def main(
                     target_velocity=stanley_target_velocity,
                     turn_velocity=stanley_turn_velocity,
                     max_steering_rad=stanley_max_steering_rad,
+                    max_velocity = 0.6,
                     **{"localization/base_frame": f"{name}/base_link"},
                 ),
             )

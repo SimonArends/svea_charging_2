@@ -57,6 +57,7 @@ class StanleyController:
         self.s = []
         self.target_idx = 0
         self.target_velocity = 0.0
+        self.max_velocity = 0.0
 
         self.error_integral = 0.0
         self.error_derivative = 0.0
@@ -110,7 +111,7 @@ class StanleyController:
         # The actuation interface expects a velocity setpoint, not acceleration.
         correction = Kp * error + Ki * self.error_integral + Kd * self.error_derivative
         requested_velocity = float(np.clip(self.target_velocity + correction,
-                                           -max_velocity, max_velocity))
+                                           -self.max_velocity, self.max_velocity))
 
         # Avoid feeding an instantaneous step to the throttle (e.g. the jump
         # straight to max_velocity on the first tick after activation).
