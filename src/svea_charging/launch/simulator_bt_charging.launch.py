@@ -49,13 +49,13 @@ def main(
     map_pkg: str = 'svea_core',
     map_name: str = 'floor2',
     map_topic: str = '/map',
-    battery_charge_current: float = 3.0,
-    battery_discharge_current_stationary: float = -2.0,
-    battery_discharge_current_driving: float = -4.5,
-    init_soc_a: float = 90,
-    init_soc_b: float = 90,
-    tasks_a: str = "270,180,90",
-    tasks_b: str = "90,180,270",
+    battery_charge_current: float = 3.5,
+    battery_discharge_current_stationary: float = -1.9,
+    battery_discharge_current_driving: float = -3.7,
+    init_soc_a: float = 70,
+    init_soc_b: float = 70,
+    tasks_a: str = "60,110,160",
+    tasks_b: str = "160,110,60",
     outages: str = "",
     controller: str = "STATIC_OPTIMAL",
 ):
@@ -141,22 +141,40 @@ def main(
         )
 
         with bl.group(name):
-            bl.node(
-                "svea_charging",
-                "outdoor_stanley.py",
-                name="outdoor_stanley",
-                param_files=route_config,
-                params=dict(
-                    svea_name=name,
-                    enabled=enabled,
-                    controller_name="stanley",
-                    target_velocity=stanley_target_velocity,
-                    turn_velocity=stanley_turn_velocity,
-                    max_steering_rad=stanley_max_steering_rad,
-                    max_velocity = 0.6,
-                    **{"localization/base_frame": f"{name}/base_link"},
-                ),
-            )
+            if name == "svea_b":
+                bl.node(
+                    "svea_charging",
+                    "outdoor_stanley.py",
+                    name="outdoor_stanley",
+                    param_files=route_config,
+                    params=dict(
+                        svea_name=name,
+                        enabled=enabled,
+                        controller_name="stanley",
+                        target_velocity=stanley_target_velocity,
+                        turn_velocity=0.29,
+                        max_steering_rad=stanley_max_steering_rad,
+                        max_velocity = 0.6,
+                        **{"localization/base_frame": f"{name}/base_link"},
+                    ),
+                )
+            else:
+                bl.node(
+                    "svea_charging",
+                    "outdoor_stanley.py",
+                    name="outdoor_stanley",
+                    param_files=route_config,
+                    params=dict(
+                        svea_name=name,
+                        enabled=enabled,
+                        controller_name="stanley",
+                        target_velocity=stanley_target_velocity,
+                        turn_velocity=stanley_turn_velocity,
+                        max_steering_rad=stanley_max_steering_rad,
+                        max_velocity = 0.6,
+                        **{"localization/base_frame": f"{name}/base_link"},
+                    ),
+                )
 
             bl.node(
                 "svea_charging",

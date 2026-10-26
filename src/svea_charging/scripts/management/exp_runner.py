@@ -213,8 +213,8 @@ class exp_runner(rx.Node):
             tasks = tuple(int(item.strip()) for item in value.split(",") if item.strip())
         except ValueError as error:
             raise ValueError(f"{name} must be comma-separated task durations") from error
-        if not tasks or any(task not in (90, 180, 270) for task in tasks):
-            raise ValueError(f"{name} durations must be 90, 180, or 270 seconds")
+        if not tasks or any(task not in (60, 110, 160) for task in tasks):
+            raise ValueError(f"{name} durations must be 60, 110, or 160 seconds")
         return tasks
 
     @staticmethod
@@ -775,7 +775,7 @@ class exp_runner(rx.Node):
         self._start_experiment(now)
         duration = runtime.tasks[runtime.task_idx]
         self._timeline_start(runtime, ActionType.DELIVERY, action.task_idx, now, duration)
-        length = {90: "short", 180: "mid", 270: "long"}[duration]
+        length = {60: "short", 110: "mid", 160: "long"}[duration]
         runtime.transport_length = length
         runtime.transport_length_retry_until = now + float(self.transport_length_retry_s)
         runtime.command = "transport"
