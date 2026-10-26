@@ -3,7 +3,7 @@ import argparse
 import csv
 import json
 from controllers import OracleController, OptimizerController, StaticOptimalController, StupidController
-from scenario import make_scenario, soc_pct
+from scenario import make_scenario, parse_outage_schedule, soc_pct
 from simulator import Simulator, Result
 
 CONTROLLERS = (StupidController, OptimizerController, OracleController, StaticOptimalController)
@@ -41,17 +41,28 @@ def print_result(r: Result):
         for a in sorted(r.actions, key=lambda x: (x.start, x.vehicle, x.end)):
             print(f"t={a.start:4d}-{a.end:4d} V{a.vehicle} {a.kind.value:<20} SoC {soc_pct(a.soc_start):6.2f}% -> {soc_pct(a.soc_end):6.2f}%")
 
-def single(seed, only=None, verbose=True, planner_time_limit=5.20, initial_soc_ranges=None, detailed=False, soc_penalty_weight=1000, total_time_weight=1):
+def _controllers_for_scenario(classes, scenario, planner_time_limit, soc_penalty_weight, total_time_weight):
+    controllers = []
+    for cls in classes:
+        if cls is StaticOptimalController:
+            controller = cls(
+                initial_socs=tuple(vehicle.initial_soc_pct for vehicle in scenario.vehicles),
+                tasks=tuple(vehicle.tasks for vehicle in scenario.vehicles),
+                soc_penalty_weight=soc_penalty_weight,
+                total_time_weight=total_time_weight,
+            )
+        else:
+            controller = cls()
+        controller.planner_time_limit = planner_time_limit
+        controller.soc_penalty_weight = soc_penalty_weight
+        controller.total_time_weight = total_time_weight
+        controllers.append(controller)
+    return controllers
+
+def single(seed, only=None, verbose=True, planner_time_limit=5.20, initial_soc_ranges=None, detailed=False, soc_penalty_weight=1000, total_time_weight=1, outage_schedule=None):
     classes = [c for c in CONTROLLERS if only is None or c.name == only]
-    controllers = [
-        cls(soc_penalty_weight=soc_penalty_weight, total_time_weight=total_time_weight) if cls is StaticOptimalController else cls()
-        for cls in classes
-    ]
-    for c in controllers:
-        c.planner_time_limit = planner_time_limit
-        c.soc_penalty_weight = soc_penalty_weight
-        c.total_time_weight = total_time_weight
-    s = make_scenario(seed, initial_soc_ranges=initial_soc_ranges)
+    s = make_scenario(seed, initial_soc_ranges=initial_soc_ranges, outage_schedule=outage_schedule)
+    controllers = _controllers_for_scenario(classes, s, planner_time_limit, soc_penalty_weight, total_time_weight)
     print_scenario(s, detailed=detailed)
     results = []
     for c in controllers:
@@ -60,14 +71,13 @@ def single(seed, only=None, verbose=True, planner_time_limit=5.20, initial_soc_r
         results.append(r)
     return results
 
-def sweep(n, planner_time_limit=0.20, initial_soc_ranges=None, detailed=False, soc_penalty_weight=1000, total_time_weight=1):
+def sweep(n, planner_time_limit=0.20, initial_soc_ranges=None, detailed=False, soc_penalty_weight=1000, total_time_weight=1, outage_schedule=None):
     rows = []
-    controllers = [
-        cls(soc_penalty_weight=soc_penalty_weight, total_time_weight=total_time_weight) if cls is StaticOptimalController else cls()
-        for cls in CONTROLLERS
-    ]
     for seed in range(1, n + 1):
-        s = make_scenario(seed, initial_soc_ranges=initial_soc_ranges)
+        s = make_scenario(seed, initial_soc_ranges=initial_soc_ranges, outage_schedule=outage_schedule)
+        controllers = _controllers_for_scenario(
+            CONTROLLERS, s, planner_time_limit, soc_penalty_weight, total_time_weight,
+        )
         for c in controllers:
             reset = getattr(c, "reset", None)
             if reset is not None:
@@ -92,14 +102,15 @@ if __name__ == "__main__":
     p.add_argument("--sweep", action="store_true")
     p.add_argument("--seeds", type=int, default=10)
     p.add_argument("--planner-time-limit", type=float, default=0.90, help="CP-SAT time budget per replanning call in seconds")
-    p.add_argument("--soc-penalty-weight", type=int, default=50000, help="Objective cost per percentage point below 11% SoC")
+    p.add_argument("--soc-penalty-weight", type=int, default=50000, help="Objective cost per percentage point below 11%% SoC")
     p.add_argument("--total-time-weight", type=int, default=100, help="Objective weight for the sum of vehicle completion times")
     p.add_argument("--soc-range", action="append", nargs=2, type=float, metavar=("MIN", "MAX"), help="Random initial SoC range for one vehicle; repeat once per vehicle")
+    p.add_argument("--outages", type=parse_outage_schedule, help="Fixed comma-separated outage intervals, e.g. 300:420,900:1020; empty string means no outages")
     p.add_argument("--detailed", action="store_true", help="Include scenario metadata and exact task durations in output")
     a = p.parse_args()
     soc_ranges = tuple(tuple(bounds) for bounds in a.soc_range) if a.soc_range else None
     if a.sweep:
-        sweep(a.seeds, a.planner_time_limit, soc_ranges, a.detailed, a.soc_penalty_weight, a.total_time_weight)
+        sweep(a.seeds, a.planner_time_limit, soc_ranges, a.detailed, a.soc_penalty_weight, a.total_time_weight, a.outages)
     else:
         single(
             a.scenario, a.controller,
@@ -108,4 +119,5 @@ if __name__ == "__main__":
             detailed=a.detailed,
             soc_penalty_weight=a.soc_penalty_weight,
             total_time_weight=a.total_time_weight,
+            outage_schedule=a.outages,
         )

@@ -12,8 +12,8 @@ CHARGE_MA = 3000
 WAIT_MA = 2000
 TO_CHARGER_S = 45
 FROM_CHARGER_S = 45
-DEFAULT_INITIAL_SOCS = (45, 45)
-DEFAULT_TASKS = ((180, 90), (90, 90, 90))
+DEFAULT_INITIAL_SOCS = (90, 90)
+DEFAULT_TASKS = ((270, 180, 90), (90, 180, 270))
 
 class ActionType(str, Enum):
     DELIVERY = "DELIVERY"
@@ -111,7 +111,25 @@ def outage_at(t: int, outages: tuple[Outage, ...] | list[Outage]) -> Outage | No
             return o
     return None
 
-def make_scenario(seed: int, initial_socs=DEFAULT_INITIAL_SOCS, tasks=DEFAULT_TASKS, outage_mean=600.0, outage_min=10, outage_max=600, outage_horizon=2000, delivery_sigma=0.0, initial_soc_ranges=None) -> Scenario:
+def parse_outage_schedule(value: str) -> tuple[Outage, ...]:
+    outages = []
+    for item in value.split(","):
+        if not item.strip():
+            continue
+        try:
+            start, end = (int(part.strip()) for part in item.split(":"))
+        except (TypeError, ValueError) as error:
+            raise ValueError("outages must look like '300:420,900:1020'") from error
+        if start < 0 or end <= start:
+            raise ValueError(f"invalid outage interval: {item}")
+        outages.append(Outage(start, end))
+    outages.sort(key=lambda outage: (outage.start, outage.end))
+    for previous, current in zip(outages, outages[1:]):
+        if current.start < previous.end:
+            raise ValueError("outages must not overlap")
+    return tuple(outages)
+
+def make_scenario(seed: int, initial_socs=DEFAULT_INITIAL_SOCS, tasks=DEFAULT_TASKS, outage_mean=600.0, outage_min=10, outage_max=600, outage_horizon=1200, delivery_sigma=0.0, initial_soc_ranges=None, outage_schedule: tuple[Outage, ...] | None = None) -> Scenario:
     rng = random.Random(seed)
     if initial_soc_ranges is None:
         resolved_socs = initial_socs
@@ -131,13 +149,21 @@ def make_scenario(seed: int, initial_socs=DEFAULT_INITIAL_SOCS, tasks=DEFAULT_TA
     if len(resolved_socs) != len(tasks):
         raise ValueError("Provide one initial SoC value for each vehicle")
     vehicles = tuple(VehicleSpec(i + 1, float(resolved_socs[i]), tuple(tasks[i])) for i in range(len(tasks)))
-    outages = []
-    t = int(round(rng.expovariate(1.0 / outage_mean)))
-    while t < outage_horizon:
-        duration = rng.randint(outage_min, outage_max)
-        end = min(outage_horizon, t + duration)
-        outages.append(Outage(t, end))
-        t = end + max(1, int(round(rng.expovariate(1.0 / outage_mean))))
+    if outage_schedule is None:
+        outages = []
+        t = int(round(rng.expovariate(1.0 / outage_mean)))
+        while t < outage_horizon:
+            duration = rng.randint(outage_min, outage_max)
+            end = min(outage_horizon, t + duration)
+            outages.append(Outage(t, end))
+            t = end + max(1, int(round(rng.expovariate(1.0 / outage_mean))))
+    else:
+        outages = list(outage_schedule)
+        if any(outage.start < 0 or outage.end <= outage.start for outage in outages):
+            raise ValueError("outage_schedule contains an invalid interval")
+        outages.sort(key=lambda outage: (outage.start, outage.end))
+        if any(current.start < previous.end for previous, current in zip(outages, outages[1:])):
+            raise ValueError("outage_schedule must not overlap")
     actual = {}
     for v in vehicles:
         for k, nominal in enumerate(v.tasks):

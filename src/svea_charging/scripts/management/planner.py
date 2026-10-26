@@ -217,7 +217,7 @@ def plan(inp: PlannerInput) -> list[PlannedAction]:
     model.Minimize(
         makespan * 1000
         + sum(vehicle_completion_ends) * max(0, int(inp.total_time_weight))
-        + sum(visit_bools) * 100
+        + sum(visit_bools) * 0 #was 100
         + sum(soc_penalties) * max(0, int(inp.soc_penalty_weight))
     )
     solver = cp_model.CpSolver()

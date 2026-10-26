@@ -14,8 +14,8 @@ Live experiment status
 The ROS 2 experiment runner publishes a readable live summary as std_msgs/String
 on /experiment/info by default. It includes elapsed time, charger outages,
 vehicle action and SoC, recent completed-task timing and SoC, and future plan
-actions when available. Override the topic with the experiment_info_topic
-parameter. View it with:
+actions when available, a results summary, and the complete action timeline.
+Override the topic with the experiment_info_topic parameter. View it with:
 ros2 topic echo /experiment/info
 
 Runner commands are republished at the experiment update rate. Transport
@@ -46,6 +46,11 @@ Randomize each vehicle's initial SoC independently as an inclusive whole
 percentage within its range:
 python run.py --scenario 1 --soc-range 70 100 --soc-range 70 100
 
+Use a fixed outage schedule instead of generated outages (times are seconds
+from scenario start):
+python run.py --scenario 1 --outages 300:420,900:1020
+python run.py --scenario 1 --outages ""
+
 Print exact realized task durations. In a sweep, also add initial SoC, nominal
 tasks, charger outages and exact durations as columns in results.csv:
 python run.py --scenario 1 --detailed
@@ -54,7 +59,7 @@ python run.py --sweep --seeds 20 --soc-range 70 100 --soc-range 70 100 --detaile
 The optimizer_time_limit is the CP-SAT budget for EACH replanning call:
 python run.py --scenario 1 --controller OPTIMIZER --planner-time-limit 0.5
 
-The optimizer enforces a 5% minimum SoC and penalizes each percentage point
+The optimizer enforces a 1% minimum SoC and penalizes each percentage point
 below 11%. Tune that objective weight with --soc-penalty-weight (default 1000)
 or the ROS parameter soc_penalty_weight. The default weight makes one
 percentage-point shortfall at one SoC checkpoint equivalent to one second of
@@ -83,8 +88,8 @@ insert a wait at the charger; it may wait before starting the charger trip.
 ORACLE uses exactly the same planner, but supplies the complete future outage
 list.
 
-STATIC_OPTIMAL computes one CP-SAT schedule before scenario generation, using
-the default nominal task list, 75% initial SoC, and no outages. Only charge
+STATIC_OPTIMAL computes one CP-SAT schedule from the scenario's actual initial
+SoCs and task lists, with no outages. Only charge
 windows are reserved: early arrivals wait for their slot, late arrivals charge
 only until its end, and vehicles leave when a slot expires. An outage can shift
 unstarted slots without changing their durations. If the vehicle has not yet

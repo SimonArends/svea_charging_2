@@ -72,6 +72,8 @@ class VehicleRuntime:
     charge_done_sent: bool = False
     resume_action: PlannedAction | None = None
     charger_trip_started_at: int | None = None
+    timeline_index: int | None = None
+    charge_started_at: float | None = None
     transport_armed: bool = True
     action_soc_start: float | None = None
     transport_length: str | None = None
@@ -87,6 +89,18 @@ class CompletedTask:
     end: int
     soc_start: float
     soc_end: float
+
+
+@dataclass
+class TimelineAction:
+    vehicle: int
+    kind: ActionType
+    task_idx: int | None
+    start: int
+    planned_end: int
+    soc_start_pct: float
+    end: int | None = None
+    soc_end_pct: float | None = None
 
 
 class exp_runner(rx.Node):
@@ -143,6 +157,10 @@ class exp_runner(rx.Node):
         self._previous_outage_state = False
         self._replan_requested = True
         self._latest_plan_actions = ()
+        self._timeline: list[TimelineAction] = []
+        self._charging_visits = 0
+        self._failure_reason: str | None = None
+        self._completed_at: int | None = None
         self._runtimes = {
             1: VehicleRuntime(1, self._tasks_a, self._initial_soc_a),
             2: VehicleRuntime(2, self._tasks_b, self._initial_soc_b),
@@ -314,6 +332,7 @@ class exp_runner(rx.Node):
         self.get_logger().error(
             f"Experiment aborted at t={self._elapsed(now)}s: virtual SoC reached 0% for {vehicle_ids}"
         )
+        self._failure_reason = f"virtual SoC reached 0% for {vehicle_ids}"
         for runtime in self._runtimes.values():
             self._publish_action(runtime.vehicle_id, "wait")
         rclpy.shutdown()
@@ -364,6 +383,10 @@ class exp_runner(rx.Node):
             runtime.task_idx >= len(runtime.tasks)
             for runtime in self._runtimes.values()
         )
+        if all_complete and self._completed_at is None:
+            self._completed_at = elapsed
+        if self._completed_at is not None:
+            elapsed = self._completed_at
         experiment_state = (
             "COMPLETE"
             if all_complete
@@ -412,16 +435,52 @@ class exp_runner(rx.Node):
                 f"{self._current_action(runtime)} | status {runtime.status or 'unknown'}"
                 f"{battery_suffix}"
             )
-            if runtime.completed_tasks:
-                lines.append("    Recent tasks:")
-                for task in runtime.completed_tasks[-5:]:
-                    lines.append(
-                        f"      Task {task.task_idx + 1} ({task.duration}s) "
-                        f"{self._format_time(task.start)}-{self._format_time(task.end)} | "
-                        f"SoC {task.soc_start:.1f}%->{task.soc_end:.1f}%"
-                    )
-            else:
-                lines.append("    Recent tasks: none")
+
+        durations = {kind: 0 for kind in ActionType}
+        for entry in self._timeline:
+            end = entry.end if entry.end is not None else elapsed
+            durations[entry.kind] += max(0, end - entry.start)
+        transport_fraction = (
+            durations[ActionType.DELIVERY] / (len(self._runtimes) * elapsed)
+            if elapsed else 0.0
+        )
+        charger_utilization = durations[ActionType.CHARGE] / elapsed if elapsed else 0.0
+        lines.extend([
+            "Results:",
+            f"  Completed: {all_complete}",
+            f"  Makespan: {elapsed} s",
+            f"  Total time spent waiting: {durations[ActionType.WAIT]} s",
+            f"  Transport time fraction: {100 * transport_fraction:.1f}%",
+            f"  Charger utilization: {100 * charger_utilization:.1f}%",
+            f"  Charging visits: {self._charging_visits}",
+            f"  Failure reason: {self._failure_reason or 'None'}",
+        ])
+        timeline_lines = ["TIMELINE:"]
+        if not self._timeline:
+            timeline_lines.append("  NO ACTIONS STARTED")
+        else:
+            current_soc = {
+                runtime.vehicle_id: runtime.soc
+                for runtime in self._runtimes.values()
+            }
+            for entry in sorted(self._timeline, key=lambda item: (item.start, item.vehicle, item.kind.value)):
+                end = entry.end if entry.end is not None else entry.planned_end
+                duration = max(0, end - entry.start)
+                action_name = entry.kind.value.replace("_", " ")
+                task = f" TASK {entry.task_idx + 1}" if entry.task_idx is not None else ""
+                soc_end = entry.soc_end_pct
+                if soc_end is None and entry.end is None:
+                    soc_end = current_soc.get(entry.vehicle)
+                soc_detail = (
+                    f" | SOC {entry.soc_start_pct:.1f}%->{soc_end:.1f}%"
+                    if soc_end is not None else ""
+                )
+                progress = " (IN PROGRESS; END FORECAST)" if entry.end is None else ""
+                timeline_lines.append(
+                    f"  V{entry.vehicle} {action_name}{task} "
+                    f"{self._format_time(entry.start)}-{self._format_time(end)} "
+                    f"({duration}S){soc_detail}{progress}"
+                )
 
         if self._controller.name == "STATIC_OPTIMAL":
             plan_actions = self._controller.current_schedule
@@ -507,6 +566,7 @@ class exp_runner(rx.Node):
                 )
         else:
             lines.append("  No future plan currently available")
+        lines.extend(timeline_lines)
         return "\n".join(lines)
 
     def _publish_experiment_info(self, now: float):
@@ -640,8 +700,34 @@ class exp_runner(rx.Node):
         if callback is not None:
             callback(PlannedAction(action.vehicle, action.kind, action.start, now, action.task_idx))
 
+    def _timeline_start(self, runtime: VehicleRuntime, kind: ActionType, task_idx: int | None, now: float, duration: int):
+        start = self._elapsed(now)
+        entry = TimelineAction(
+            runtime.vehicle_id,
+            kind,
+            task_idx,
+            start,
+            start + max(0, duration),
+            runtime.soc,
+        )
+        self._timeline.append(entry)
+        runtime.timeline_index = len(self._timeline) - 1
+
+    def _timeline_update_forecast(self, runtime: VehicleRuntime, now: float, duration: int):
+        if runtime.timeline_index is not None:
+            self._timeline[runtime.timeline_index].planned_end = self._elapsed(now) + max(0, duration)
+
+    def _timeline_finish(self, runtime: VehicleRuntime, now: float):
+        if runtime.timeline_index is None:
+            return
+        entry = self._timeline[runtime.timeline_index]
+        entry.end = self._elapsed(now)
+        entry.soc_end_pct = runtime.soc
+        runtime.timeline_index = None
+
     def _begin_wait(self, runtime: VehicleRuntime, action: PlannedAction, now: float):
         self._start_experiment(now)
+        self._timeline_start(runtime, ActionType.WAIT, action.task_idx, now, action.end - action.start)
         runtime.command = "wait"
         runtime.action = action
         runtime.action_started_at = now
@@ -653,6 +739,7 @@ class exp_runner(rx.Node):
 
     def _finish_wait(self, runtime: VehicleRuntime, now: float):
         action = runtime.action
+        self._timeline_finish(runtime, now)
         self._publish_action(runtime.vehicle_id, "wait")
         runtime.command = None
         runtime.action = None
@@ -664,6 +751,7 @@ class exp_runner(rx.Node):
 
     def _begin_charger_wait(self, runtime: VehicleRuntime, action: PlannedAction, now: float):
         self._start_experiment(now)
+        self._timeline_start(runtime, ActionType.WAIT, action.task_idx, now, action.end - action.start)
         runtime.resume_action = runtime.action
         runtime.action = action
         runtime.action_started_at = now
@@ -674,6 +762,7 @@ class exp_runner(rx.Node):
 
     def _finish_charger_wait(self, runtime: VehicleRuntime, now: float):
         action = runtime.action
+        self._timeline_finish(runtime, now)
         runtime.action = runtime.resume_action
         runtime.resume_action = None
         runtime.action_started_at = None
@@ -685,6 +774,7 @@ class exp_runner(rx.Node):
     def _start_transport(self, runtime: VehicleRuntime, action: PlannedAction, now: float):
         self._start_experiment(now)
         duration = runtime.tasks[runtime.task_idx]
+        self._timeline_start(runtime, ActionType.DELIVERY, action.task_idx, now, duration)
         length = {90: "short", 180: "mid", 270: "long"}[duration]
         runtime.transport_length = length
         runtime.transport_length_retry_until = now + float(self.transport_length_retry_s)
@@ -700,6 +790,7 @@ class exp_runner(rx.Node):
 
     def _start_charge_cycle(self, runtime: VehicleRuntime, action: PlannedAction, now: float):
         self._start_experiment(now)
+        self._timeline_start(runtime, ActionType.DRIVE_TO_CHARGER, action.task_idx, now, action.end - action.start)
         runtime.charger_trip_started_at = self._elapsed(now)
         runtime.command = "charge_cycle"
         runtime.action = action
@@ -710,6 +801,7 @@ class exp_runner(rx.Node):
         runtime.charge_departure_end = None
         runtime.charge_done_sent = False
         runtime.resume_action = None
+        runtime.charge_started_at = None
         self._publish_charge_complete(runtime.vehicle_id, False)
         self._publish_action(runtime.vehicle_id, "charge_cycle")
         self._notify_action_started(action)
@@ -717,6 +809,12 @@ class exp_runner(rx.Node):
     def _start_charging(self, runtime: VehicleRuntime, action: PlannedAction, now: float):
         self._start_experiment(now)
         duration = max(1, action.end - action.start)
+        if runtime.charge_started_at is None:
+            runtime.charge_started_at = now
+            self._charging_visits += 1
+            self._timeline_start(runtime, ActionType.CHARGE, action.task_idx, now, duration)
+        else:
+            self._timeline_update_forecast(runtime, now, duration)
         runtime.action = action
         charge_gain_pct = CHARGE_MA * duration * 100.0 / BATTERY_MAS
         runtime.charge_target = min(100.0, runtime.soc + charge_gain_pct)
@@ -799,6 +897,7 @@ class exp_runner(rx.Node):
 
     def _complete_transport(self, runtime: VehicleRuntime, now: float):
         action = runtime.action
+        self._timeline_finish(runtime, now)
         task_idx = action.task_idx if action is not None and action.task_idx is not None else runtime.task_idx
         runtime.completed_tasks.append(
             CompletedTask(
@@ -827,9 +926,13 @@ class exp_runner(rx.Node):
         if runtime.charge_done_sent:
             return
         now = time.monotonic()
+        if runtime.charge_started_at is not None:
+            self._timeline_finish(runtime, now)
+            runtime.charge_started_at = None
         runtime.charge_done_sent = True
         runtime.charge_departure_end = self._elapsed(now) + 45
         runtime.charger_trip_started_at = None
+        self._timeline_start(runtime, ActionType.DRIVE_FROM_CHARGER, runtime.task_idx, now, 45)
         self._publish_charge_complete(runtime.vehicle_id, True)
         if runtime.action is not None and runtime.action.kind == ActionType.CHARGE:
             self._notify_action_completed(runtime.action, self._elapsed(time.monotonic()))
@@ -842,6 +945,7 @@ class exp_runner(rx.Node):
     def _on_docked(self, runtime: VehicleRuntime, now: float):
         runtime.location = "charger"
         previous = runtime.action
+        self._timeline_finish(runtime, now)
         if previous is not None and previous.kind == ActionType.DRIVE_TO_CHARGER:
             self._notify_action_completed(previous, self._elapsed(now))
         runtime.charge_target = None
@@ -849,6 +953,7 @@ class exp_runner(rx.Node):
         self._replan_requested = True
 
     def _on_parked(self, runtime: VehicleRuntime, now: float):
+        self._timeline_finish(runtime, now)
         charge_action = runtime.action
         if charge_action is not None and charge_action.kind == ActionType.CHARGE:
             if not runtime.charge_done_sent:
@@ -870,6 +975,7 @@ class exp_runner(rx.Node):
         runtime.charge_deadline = None
         runtime.charge_departure_end = None
         runtime.charge_done_sent = False
+        runtime.charge_started_at = None
         runtime.resume_action = None
         runtime.location = "mission"
         self._replan_requested = True
