@@ -86,7 +86,11 @@ def sweep(n, planner_time_limit=0.20, initial_soc_ranges=None, detailed=False, s
             c.soc_penalty_weight = soc_penalty_weight
             c.total_time_weight = total_time_weight
             r = Simulator(s, c, verbose=False).run()
-            row = {"seed": seed, "controller": r.controller, "completed": r.completed, "makespan_s": r.makespan, "total_waiting_time_s": r.total_waiting_time, "transport_time_fraction": r.transport_time_fraction, "charger_utilization": r.charger_utilization, "charging_visits": r.charging_visits, "failure_reason": r.failure_reason or ""}
+            minimum_soc_pct = min(
+                [vehicle.initial_soc_pct for vehicle in s.vehicles]
+                + [soc_pct(soc) for action in r.actions for soc in (action.soc_start, action.soc_end)]
+            )
+            row = {"seed": seed, "controller": r.controller, "completed": r.completed, "makespan_s": r.makespan, "minimum_soc_pct": round(minimum_soc_pct, 3), "total_waiting_time_s": r.total_waiting_time, "transport_time_fraction": r.transport_time_fraction, "charger_utilization": r.charger_utilization, "charging_visits": r.charging_visits, "failure_reason": r.failure_reason or ""}
             if detailed:
                 row.update(scenario_log_fields(s))
             rows.append(row)

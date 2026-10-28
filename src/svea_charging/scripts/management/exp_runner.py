@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import math
 import time
+import csv
 from dataclasses import dataclass, field
 
 import rclpy
@@ -157,6 +158,10 @@ class exp_runner(rx.Node):
         self._previous_outage_state = False
         self._replan_requested = True
         self._latest_plan_actions = ()
+        self._run_csv_file = None
+        self._run_csv_writer = None
+        self._run_csv_closed = False
+        self._last_run_sample_second = None
         self._timeline: list[TimelineAction] = []
         self._charging_visits = 0
         self._failure_reason: str | None = None
@@ -176,6 +181,7 @@ class exp_runner(rx.Node):
         }
         period = 1.0 / float(self.update_rate)
         self.create_timer(period, self.loop)
+        self.create_timer(1.0, self._record_run_sample)
         self.get_logger().info(
             f"Experiment runner: {self._controller.name}; "
             f"initial SoC=({self._initial_soc_a:.1f}%, {self._initial_soc_b:.1f}%); "
@@ -571,6 +577,57 @@ class exp_runner(rx.Node):
 
     def _publish_experiment_info(self, now: float):
         self.experiment_info_pub.publish(String(data=self._experiment_info(now)))
+
+    def _record_run_sample(self):
+        if self._started_at is None or self._run_csv_closed:
+            return
+        now = time.monotonic()
+        self._update_soc(now)
+        elapsed = self._elapsed(now)
+        if elapsed == self._last_run_sample_second:
+            return
+        if self._run_csv_writer is None:
+            self._run_csv_file = open("run.csv", "w", newline="")
+            self._run_csv_writer = csv.DictWriter(
+                self._run_csv_file,
+                fieldnames=(
+                    "elapsed_s",
+                    "charger_status",
+                    "vehicle_1_action",
+                    "vehicle_1_soc_pct",
+                    "vehicle_2_action",
+                    "vehicle_2_soc_pct",
+                ),
+            )
+            self._run_csv_writer.writeheader()
+
+        charger_status = "OUTAGE" if self._outage_at(elapsed) is not None else "AVAILABLE"
+        if charger_status == "AVAILABLE":
+            for runtime in self._runtimes.values():
+                if runtime.status == "docked" and runtime.command == "charge_cycle":
+                    charger_status = (
+                        f"CHARGING_V{runtime.vehicle_id}"
+                        if runtime.charge_target is not None and not runtime.charge_done_sent
+                        else f"OCCUPIED_V{runtime.vehicle_id}"
+                    )
+                    break
+
+        row = {"elapsed_s": elapsed, "charger_status": charger_status}
+        for runtime in self._runtimes.values():
+            row[f"vehicle_{runtime.vehicle_id}_action"] = self._current_action(runtime)
+            row[f"vehicle_{runtime.vehicle_id}_soc_pct"] = round(runtime.soc, 3)
+        self._run_csv_writer.writerow(row)
+        self._run_csv_file.flush()
+        self._last_run_sample_second = elapsed
+
+        if self._failure_reason is not None or all(
+            runtime.task_idx >= len(runtime.tasks)
+            for runtime in self._runtimes.values()
+        ):
+            self._run_csv_file.close()
+            self._run_csv_file = None
+            self._run_csv_writer = None
+            self._run_csv_closed = True
 
     def _outage_at(self, elapsed: int) -> Outage | None:
         return next((outage for outage in self._outages if outage.start <= elapsed < outage.end), None)
@@ -1016,6 +1073,7 @@ class exp_runner(rx.Node):
         now = time.monotonic()
         self._update_soc(now)
         if self._stop_for_empty_battery(now):
+            self._record_run_sample()
             return
         for runtime in self._runtimes.values():
             self._process_vehicle_events(runtime, now)
@@ -1035,6 +1093,7 @@ class exp_runner(rx.Node):
             self._replan(now)
         self._publish_runtime_commands(now)
         self._publish_experiment_info(now)
+        self._record_run_sample()
         self._last_loop_at = now
 
 

@@ -55,12 +55,12 @@ def main(
     battery_discharge_current_driving: float = -3.7,
     ## LiDAR
     lidar_ip: str = "192.168.0.10",
-    init_soc_a: float = 70,
-    init_soc_b: float = 70,
-    tasks_a: str = "160,110,60",
-    tasks_b: str = "60,110,160",
-    outages: str = "",
-    controller: str = "STATIC_OPTIMAL",
+    init_soc_a: float = 58,
+    init_soc_b: float = 72,
+    tasks_a: str = "110,110,160",
+    tasks_b: str = "160,110,110",
+    outages: str = "187:382, 475:622",
+    controller: str = "ORACLE",
 ):
 
     bl = BetterLaunch()
@@ -123,14 +123,14 @@ def main(
 
     if not is_sim:
         INITIAL_POSES = {
-            "svea_a": (-1.2, 0.0, 1.5, "A", "svea_b", False, 1.9),
+            "svea_a": (-1.2, 0.0, 1.5, "A", "svea_b", False, 1.9, 0.42),
             }
     if is_sim:
         INITIAL_POSES = {
-            "svea_b": (1.2, 0.0, -1.64, "B", "svea_a", True, 1.0),
+            "svea_b": (1.2, 0.0, -1.64, "B", "svea_a", True, 1.0, 0.48),
             }
 
-    for name, (init_x, init_y, init_a, start_loc, other_name, sim, switch_dist) in INITIAL_POSES.items():
+    for name, (init_x, init_y, init_a, start_loc, other_name, sim, switch_dist, turn_vel) in INITIAL_POSES.items():
 
         bl.include(
             "svea_core",
@@ -210,7 +210,7 @@ def main(
                     enabled=enabled,
                     controller_name="transport_stanley",
                     target_velocity=stanley_target_velocity,
-                    turn_velocity=stanley_turn_velocity,
+                    turn_velocity=turn_vel,
                     max_steering_rad=stanley_max_steering_rad,
                     max_velocity = 0.4,
                     **{"localization/base_frame": f"{name}/base_link"},

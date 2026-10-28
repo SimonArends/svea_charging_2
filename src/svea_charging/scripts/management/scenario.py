@@ -13,7 +13,7 @@ WAIT_MA = 1900
 TO_CHARGER_S = 45
 FROM_CHARGER_S = 45
 DEFAULT_INITIAL_SOCS = (83, 83)
-DEFAULT_TASKS = ((160, 110, 60), (60, 110, 160))
+DEFAULT_TASKS = ((110,110,160), (160, 110, 110))
 
 class ActionType(str, Enum):
     DELIVERY = "DELIVERY"
@@ -129,7 +129,7 @@ def parse_outage_schedule(value: str) -> tuple[Outage, ...]:
             raise ValueError("outages must not overlap")
     return tuple(outages)
 
-def make_scenario(seed: int, initial_socs=DEFAULT_INITIAL_SOCS, tasks=DEFAULT_TASKS, outage_mean=600.0, outage_min=10, outage_max=600, outage_horizon=1200, delivery_sigma=0.0, initial_soc_ranges=None, outage_schedule: tuple[Outage, ...] | None = None) -> Scenario:
+def make_scenario(seed: int, initial_socs=DEFAULT_INITIAL_SOCS, tasks=DEFAULT_TASKS, outage_mean=300.0, outage_min=100, outage_max=300, outage_horizon=1200, delivery_sigma=0.0, initial_soc_ranges=None, outage_schedule: tuple[Outage, ...] | None = None) -> Scenario:
     rng = random.Random(seed)
     if initial_soc_ranges is None:
         resolved_socs = initial_socs
