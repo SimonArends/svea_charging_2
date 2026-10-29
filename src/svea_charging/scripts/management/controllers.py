@@ -1,6 +1,6 @@
 from __future__ import annotations
 from dataclasses import replace
-from scenario import ActionType, BATTERY_MAS, CHARGE_MA, CHARGE_TARGET_MAS, DEFAULT_INITIAL_SOCS, DEFAULT_TASKS, DRIVE_MA, FROM_CHARGER_S, Knowledge, MIN_SOC_MAS, PlannedAction, TO_CHARGER_S, VehicleSnapshot, outage_at
+from scenario import ActionType, BATTERY_MAS, CHARGE_TARGET_MAS, DEFAULT_ENERGY_RATES, DEFAULT_INITIAL_SOCS, DEFAULT_TASKS, EnergyRates, FROM_CHARGER_S, Knowledge, MIN_SOC_MAS, PlannedAction, TO_CHARGER_S, VehicleSnapshot, outage_at
 
 class Controller:
     name = "BASE"
@@ -9,13 +9,17 @@ class Controller:
     total_time_weight = 1
     last_plan = ()
     last_plan_stale = False
+    def __init__(self, energy_rates: EnergyRates = DEFAULT_ENERGY_RATES):
+        self.energy_rates = energy_rates
+
     def decide(self, now: int, vehicles: tuple[VehicleSnapshot, ...], charger_busy_until: int, knowledge: Knowledge) -> list[PlannedAction]:
         raise NotImplementedError
 
 class StupidController(Controller):
     name = "STUPID"
 
-    def __init__(self):
+    def __init__(self, energy_rates: EnergyRates = DEFAULT_ENERGY_RATES):
+        super().__init__(energy_rates)
         self.reset()
 
     def reset(self):
@@ -23,20 +27,19 @@ class StupidController(Controller):
         self._charger_trip_started = set()
         self._charger_reserved_by = None
 
-    @staticmethod
-    def _charge_duration(vehicle, soc):
+    def _charge_duration(self, vehicle, soc):
         remaining = tuple(max(0, duration) for duration in vehicle.tasks[vehicle.task_idx:] if duration > 0)
         if not remaining:
             return 0
         target = min(
             BATTERY_MAS,
-            FROM_CHARGER_S * DRIVE_MA + sum(remaining) * DRIVE_MA + CHARGE_TARGET_MAS,
+            FROM_CHARGER_S * self.energy_rates.drive_ma + sum(remaining) * self.energy_rates.drive_ma + CHARGE_TARGET_MAS,
         )
         if soc >= target:
             return 0
         return min(
-            (target - soc + CHARGE_MA - 1) // CHARGE_MA,
-            max(0, (BATTERY_MAS - soc) // CHARGE_MA),
+            (target - soc + self.energy_rates.charge_ma - 1) // self.energy_rates.charge_ma,
+            max(0, (BATTERY_MAS - soc) // self.energy_rates.charge_ma),
         )
 
     def _reservation_release(self, now, vehicles, charger_busy_until, knowledge):
@@ -85,10 +88,10 @@ class StupidController(Controller):
             remaining = tuple(max(0, d) for d in v.tasks[v.task_idx:] if d > 0)
             if not remaining:
                 continue
-            total_drive = sum(remaining) * DRIVE_MA
-            next_drive = remaining[0] * DRIVE_MA
-            reach_charger = TO_CHARGER_S * DRIVE_MA
-            leave_charger = FROM_CHARGER_S * DRIVE_MA
+            total_drive = sum(remaining) * self.energy_rates.drive_ma
+            next_drive = remaining[0] * self.energy_rates.drive_ma
+            reach_charger = TO_CHARGER_S * self.energy_rates.drive_ma
+            leave_charger = FROM_CHARGER_S * self.energy_rates.drive_ma
             if v.location == "mission":
                 if v.id in self._charger_intent or (
                     v.soc < total_drive + MIN_SOC_MAS
@@ -130,8 +133,8 @@ class StupidController(Controller):
                 if outage is not None and v.id not in self._charger_trip_started:
                     actions.append(PlannedAction(v.id, ActionType.WAIT, now, outage.end, v.task_idx))
                     continue
-                charge_s = (target - v.soc + CHARGE_MA - 1) // CHARGE_MA
-                max_s = max(0, (BATTERY_MAS - v.soc) // CHARGE_MA)
+                charge_s = (target - v.soc + self.energy_rates.charge_ma - 1) // self.energy_rates.charge_ma
+                max_s = max(0, (BATTERY_MAS - v.soc) // self.energy_rates.charge_ma)
                 if max_s > 0:
                     actions.append(PlannedAction(v.id, ActionType.CHARGE, now, now + min(charge_s, max_s), v.task_idx))
                     continue
@@ -146,12 +149,14 @@ class OptimizerController(Controller):
         p = planner_inputs(
             now, vehicles, charger_busy_until, knowledge.observed_outages,
             self.soc_penalty_weight, self.total_time_weight,
+            self.energy_rates,
         )
         candidate = tuple(plan(PlannerInput(
             p.now, p.vehicles, p.charger_busy_until, p.known_outages,
             self.planner_time_limit,
             soc_penalty_weight=self.soc_penalty_weight,
             total_time_weight=self.total_time_weight,
+            energy_rates=self.energy_rates,
         )))
         if candidate:
             self.last_plan = candidate
@@ -170,12 +175,14 @@ class OracleController(OptimizerController):
         p = planner_inputs(
             now, vehicles, charger_busy_until, knowledge.all_outages,
             self.soc_penalty_weight, self.total_time_weight,
+            self.energy_rates,
         )
         candidate = tuple(plan(PlannerInput(
             p.now, p.vehicles, p.charger_busy_until, p.known_outages,
             self.planner_time_limit,
             soc_penalty_weight=self.soc_penalty_weight,
             total_time_weight=self.total_time_weight,
+            energy_rates=self.energy_rates,
         )))
         if candidate:
             self.last_plan = candidate
@@ -190,9 +197,10 @@ class OracleController(OptimizerController):
 class StaticOptimalController(Controller):
     name = "STATIC_OPTIMAL"
 
-    def __init__(self, initial_socs=DEFAULT_INITIAL_SOCS, tasks=DEFAULT_TASKS, soc_penalty_weight=1000, total_time_weight=1):
+    def __init__(self, initial_socs=DEFAULT_INITIAL_SOCS, tasks=DEFAULT_TASKS, soc_penalty_weight=1000, total_time_weight=1, energy_rates: EnergyRates = DEFAULT_ENERGY_RATES):
         from planner import PlannerInput, VehicleInput, plan
 
+        super().__init__(energy_rates)
         self.soc_penalty_weight = int(soc_penalty_weight)
         self.total_time_weight = int(total_time_weight)
 
@@ -212,6 +220,7 @@ class StaticOptimalController(Controller):
             0, nominal_vehicles, 0, (), 30.0, 1,
             soc_penalty_weight=self.soc_penalty_weight,
             total_time_weight=self.total_time_weight,
+            energy_rates=self.energy_rates,
         )))
         self.last_plan = self.schedule
         if not self.schedule:

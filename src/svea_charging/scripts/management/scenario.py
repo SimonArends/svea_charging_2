@@ -7,13 +7,25 @@ import random
 BATTERY_MAS = 450 * 3600
 MIN_SOC_MAS = BATTERY_MAS // 10 # 10% floor used by STUPID.
 CHARGE_TARGET_MAS = MIN_SOC_MAS + 1 * BATTERY_MAS // 100 # 11% margin used by STUPID.
-DRIVE_MA = 3700
-CHARGE_MA = 3500
-WAIT_MA = 1900
+DRIVE_MA = 3400
+CHARGE_MA = 3300
+WAIT_MA = 1640
 TO_CHARGER_S = 45
-FROM_CHARGER_S = 45
-DEFAULT_INITIAL_SOCS = (83, 83)
+FROM_CHARGER_S = 34
+DEFAULT_INITIAL_SOCS = (70, 45)
 DEFAULT_TASKS = ((110,110,160), (160, 110, 110))
+
+@dataclass(frozen=True)
+class EnergyRates:
+    drive_ma: int = DRIVE_MA
+    charge_ma: int = CHARGE_MA
+    wait_ma: int = WAIT_MA
+
+    def __post_init__(self):
+        if any(rate <= 0 for rate in (self.drive_ma, self.charge_ma, self.wait_ma)):
+            raise ValueError("energy rates must be positive")
+
+DEFAULT_ENERGY_RATES = EnergyRates()
 
 class ActionType(str, Enum):
     DELIVERY = "DELIVERY"
@@ -99,11 +111,11 @@ def soc_pct(soc_mas: int) -> float:
 def soc_cost(ma: int, seconds: int) -> int:
     return ma * seconds
 
-def required_drive_soc(task_seconds: int) -> int:
-    return soc_cost(DRIVE_MA, task_seconds)
+def required_drive_soc(task_seconds: int, energy_rates: EnergyRates = DEFAULT_ENERGY_RATES) -> int:
+    return soc_cost(energy_rates.drive_ma, task_seconds)
 
-def can_complete_delivery(soc: int, duration: int) -> bool:
-    return soc >= required_drive_soc(duration)
+def can_complete_delivery(soc: int, duration: int, energy_rates: EnergyRates = DEFAULT_ENERGY_RATES) -> bool:
+    return soc >= required_drive_soc(duration, energy_rates)
 
 def outage_at(t: int, outages: tuple[Outage, ...] | list[Outage]) -> Outage | None:
     for o in outages:
@@ -129,7 +141,7 @@ def parse_outage_schedule(value: str) -> tuple[Outage, ...]:
             raise ValueError("outages must not overlap")
     return tuple(outages)
 
-def make_scenario(seed: int, initial_socs=DEFAULT_INITIAL_SOCS, tasks=DEFAULT_TASKS, outage_mean=300.0, outage_min=100, outage_max=300, outage_horizon=1200, delivery_sigma=0.0, initial_soc_ranges=None, outage_schedule: tuple[Outage, ...] | None = None) -> Scenario:
+def make_scenario(seed: int, initial_socs=DEFAULT_INITIAL_SOCS, tasks=DEFAULT_TASKS, outage_mean=400.0, outage_min=100, outage_max=300, outage_horizon=1200, delivery_sigma=0.0, initial_soc_ranges=None, outage_schedule: tuple[Outage, ...] | None = None) -> Scenario:
     rng = random.Random(seed)
     if initial_soc_ranges is None:
         resolved_socs = initial_socs

@@ -25,9 +25,13 @@ from controllers import (
 )
 from scenario import (
     BATTERY_MAS,
-    CHARGE_MA,
+    DEFAULT_ENERGY_RATES,
     DEFAULT_INITIAL_SOCS,
     DEFAULT_TASKS,
+    DRIVE_MA,
+    EnergyRates,
+    FROM_CHARGER_S,
+    WAIT_MA,
     ActionType,
     Knowledge,
     Outage,
@@ -110,6 +114,9 @@ class exp_runner(rx.Node):
     planner_time_limit = rx.Parameter(0.9)
     soc_penalty_weight = rx.Parameter(50000)
     total_time_weight = rx.Parameter(100)
+    drive_ma = rx.Parameter(DRIVE_MA)
+    charge_ma = rx.Parameter(DEFAULT_ENERGY_RATES.charge_ma)
+    wait_ma = rx.Parameter(WAIT_MA)
     initial_soc_pct_a = rx.Parameter(float(DEFAULT_INITIAL_SOCS[0]))
     initial_soc_pct_b = rx.Parameter(float(DEFAULT_INITIAL_SOCS[1]))
     tasks_a = rx.Parameter(",".join(str(value) for value in DEFAULT_TASKS[0]))
@@ -185,6 +192,8 @@ class exp_runner(rx.Node):
         self.get_logger().info(
             f"Experiment runner: {self._controller.name}; "
             f"initial SoC=({self._initial_soc_a:.1f}%, {self._initial_soc_b:.1f}%); "
+            f"energy rates=drive {self._energy_rates.drive_ma} mA, "
+            f"charge {self._energy_rates.charge_ma} mA, wait {self._energy_rates.wait_ma} mA; "
             f"outages={[(o.start, o.end) for o in self._outages]}"
         )
 
@@ -206,6 +215,11 @@ class exp_runner(rx.Node):
             raise ValueError("initial SoC values must be between 0 and 100 percent")
         self._tasks_a = self._parse_tasks(str(self.tasks_a), "tasks_a")
         self._tasks_b = self._parse_tasks(str(self.tasks_b), "tasks_b")
+        self._energy_rates = EnergyRates(
+            drive_ma=int(self.drive_ma),
+            charge_ma=int(self.charge_ma),
+            wait_ma=int(self.wait_ma),
+        )
         if float(self.planner_time_limit) <= 0:
             raise ValueError("planner_time_limit must be positive")
         if int(self.soc_penalty_weight) < 0:
@@ -258,8 +272,9 @@ class exp_runner(rx.Node):
                 tasks=(self._tasks_a, self._tasks_b),
                     soc_penalty_weight=int(self.soc_penalty_weight),
                 total_time_weight=int(self.total_time_weight),
+                energy_rates=self._energy_rates,
             )
-        return classes[name]()
+        return classes[name](energy_rates=self._energy_rates)
 
     def _battery_update(self, vehicle_id: int, msg: BatteryState):
         runtime = getattr(self, "_runtimes", {}).get(vehicle_id)
@@ -658,7 +673,7 @@ class exp_runner(rx.Node):
                     math.ceil(
                         (runtime.charge_target - runtime.soc)
                         * BATTERY_MAS
-                        / (100.0 * CHARGE_MA)
+                        / (100.0 * self._energy_rates.charge_ma)
                     ),
                 )
                 busy_until = max(busy_until, now + remaining)
@@ -682,20 +697,20 @@ class exp_runner(rx.Node):
             if runtime.wait_until is not None:
                 remaining = max(0.0, runtime.wait_until - monotonic_now)
                 busy_until = now + int(math.ceil(remaining))
-                ready_soc -= int(round(remaining * 2000))
+                ready_soc -= int(round(remaining * self._energy_rates.wait_ma))
             elif runtime.command == "transport" and runtime.action is not None:
                 duration = runtime.action.end - runtime.action.start
                 finish_at = (runtime.action_started_at or monotonic_now) + duration
                 remaining = max(0.0, finish_at - monotonic_now)
                 busy_until = now + int(math.ceil(remaining))
-                ready_soc -= int(round(remaining * 4500))
+                ready_soc -= int(round(remaining * self._energy_rates.drive_ma))
                 ready_task_idx += 1
                 ready_location = "mission"
             elif runtime.command == "charge_cycle":
                 if runtime.charge_done_sent:
                     departure_end = runtime.charge_departure_end or now + 45
                     remaining = max(0, departure_end - now)
-                    ready_soc -= remaining * 4500
+                    ready_soc -= remaining * self._energy_rates.drive_ma
                     ready_location = "mission"
                 elif runtime.status == "docked" and runtime.charge_target is not None:
                     if flexible_charges:
@@ -708,10 +723,10 @@ class exp_runner(rx.Node):
                             0.0,
                             (runtime.charge_target - runtime.soc)
                             * BATTERY_MAS
-                            / (100.0 * CHARGE_MA),
+                            / (100.0 * self._energy_rates.charge_ma),
                         )
                         remaining = charge_remaining + 45.0
-                        ready_soc = int(round(runtime.charge_target * BATTERY_MAS / 100.0)) - 45 * 4500
+                        ready_soc = int(round(runtime.charge_target * BATTERY_MAS / 100.0)) - FROM_CHARGER_S * self._energy_rates.drive_ma
                         ready_location = "mission"
                 elif runtime.status == "docked":
                     remaining = 0.0
@@ -724,7 +739,7 @@ class exp_runner(rx.Node):
                     )
                     finish_at = (runtime.action_started_at or monotonic_now) + duration
                     remaining = max(0.0, finish_at - monotonic_now)
-                    ready_soc -= int(round(remaining * 4500))
+                    ready_soc -= int(round(remaining * self._energy_rates.drive_ma))
                     ready_location = "charger"
                     if runtime.action is not None and runtime.action.kind == ActionType.DRIVE_TO_CHARGER:
                         charger_trip_started_at = self._elapsed(runtime.action_started_at or monotonic_now)
@@ -873,7 +888,7 @@ class exp_runner(rx.Node):
         else:
             self._timeline_update_forecast(runtime, now, duration)
         runtime.action = action
-        charge_gain_pct = CHARGE_MA * duration * 100.0 / BATTERY_MAS
+        charge_gain_pct = self._energy_rates.charge_ma * duration * 100.0 / BATTERY_MAS
         runtime.charge_target = min(100.0, runtime.soc + charge_gain_pct)
         runtime.charge_deadline = now + duration * float(self.charge_timeout_factor) + 60.0
         self._notify_action_started(action)

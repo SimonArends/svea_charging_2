@@ -1,6 +1,6 @@
 from __future__ import annotations
 from dataclasses import dataclass
-from scenario import ActionType, BATTERY_MAS, CHARGE_MA, DRIVE_MA, ExecutedAction, Knowledge, PlannedAction, Scenario, VehicleSnapshot, VehicleState, initial_states, outage_at
+from scenario import ActionType, BATTERY_MAS, DEFAULT_ENERGY_RATES, ExecutedAction, Knowledge, PlannedAction, Scenario, VehicleSnapshot, VehicleState, initial_states, outage_at
 
 @dataclass
 class RuntimeAction:
@@ -163,11 +163,11 @@ class Simulator:
 
     def _delta_soc(self, kind, duration):
         if kind == ActionType.DELIVERY or kind in (ActionType.DRIVE_TO_CHARGER, ActionType.DRIVE_FROM_CHARGER):
-            rate = DRIVE_MA
+            rate = self.controller.energy_rates.drive_ma
             return -rate * duration
         if kind == ActionType.CHARGE:
-            return CHARGE_MA * duration
-        return -2000 * duration
+            return self.controller.energy_rates.charge_ma * duration
+        return -self.controller.energy_rates.wait_ma * duration
 
     def start_pending(self):
         changed = False

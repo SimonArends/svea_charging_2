@@ -49,9 +49,10 @@ def main(
     map_pkg: str = 'svea_core',
     map_name: str = 'floor2',
     map_topic: str = '/map',
-    battery_charge_current: float = 3.5,
-    battery_discharge_current_stationary: float = -1.9,
-    battery_discharge_current_driving: float = -3.7,
+    nominal_battery_charge_current: float = 3.3,
+    nominal_battery_discharge_current_stationary: float = 1.64,
+    nominal_battery_discharge_current_driving: float = 3.4,
+    voltage = 12.0,
     init_soc_a: float = 40,
     init_soc_b: float = 30,
     tasks_a: str = "110,160",
@@ -59,6 +60,9 @@ def main(
     outages: str = "",
     controller: str = "STATIC_OPTIMAL",
 ):
+    charge_a = nominal_battery_charge_current
+    wait_a = nominal_battery_discharge_current_stationary * 11.1 / voltage
+    drive_a = nominal_battery_discharge_current_driving * (11.1-0.12) / (voltage-0.12)
 
     bl = BetterLaunch()
 
@@ -256,9 +260,9 @@ def main(
                     "battery_simulator.py",
                     name="battery_simulator",
                     params=dict(
-                        battery_charge_current=battery_charge_current,
-                        battery_discharge_current_stationary = battery_discharge_current_stationary,        
-                        battery_discharge_current_driving = battery_discharge_current_driving,
+                        battery_charge_current=charge_a,
+                        battery_discharge_current_stationary = -wait_a,        
+                        battery_discharge_current_driving = -drive_a,
                     ),
                 )
 
@@ -272,6 +276,9 @@ def main(
             initial_soc_pct_b = init_soc_b,
             tasks_a = tasks_a,
             tasks_b = tasks_b,
-            outage_slots = outages,    
+            outage_slots = outages,
+            drive_ma = int(round(1000*drive_a)),
+            charge_ma = int(round(1000*charge_a)),
+            wait_ma = int(round(1000*wait_a)),    
         ),
     )

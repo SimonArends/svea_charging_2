@@ -1,7 +1,7 @@
 from __future__ import annotations
 from dataclasses import dataclass
 from ortools.sat.python import cp_model
-from scenario import ActionType, BATTERY_MAS, CHARGE_MA, DRIVE_MA, FROM_CHARGER_S, Outage, PlannedAction, TO_CHARGER_S, WAIT_MA, VehicleSnapshot
+from scenario import ActionType, BATTERY_MAS, DEFAULT_ENERGY_RATES, EnergyRates, FROM_CHARGER_S, Outage, PlannedAction, TO_CHARGER_S, VehicleSnapshot
 
 PLANNER_MIN_SOC_MAS = BATTERY_MAS * 1 // 100
 SOC_PENALTY_THRESHOLD_MAS = BATTERY_MAS * 11 // 100
@@ -28,6 +28,7 @@ class PlannerInput:
     num_search_workers: int = 8
     soc_penalty_weight: int = 1000
     total_time_weight: int = 1
+    energy_rates: EnergyRates = DEFAULT_ENERGY_RATES
 
 def _horizon(inp: PlannerInput) -> int:
     remaining = sum(sum(v.task_durations[v.task_idx:]) for v in inp.vehicles)
@@ -82,7 +83,7 @@ def plan(inp: PlannerInput) -> list[PlannedAction]:
             from_s = model.NewIntVar(inp.now, H, f"v{v.id}_from_s_{k}")
             from_e = model.NewIntVar(inp.now, H, f"v{v.id}_from_e_{k}")
             wait_d = model.NewIntVar(0, H - inp.now, f"v{v.id}_wait_d_{k}")
-            charge_d = model.NewIntVar(0, BATTERY_MAS // CHARGE_MA, f"v{v.id}_charge_d_{k}")
+            charge_d = model.NewIntVar(0, BATTERY_MAS // inp.energy_rates.charge_ma, f"v{v.id}_charge_d_{k}")
             soc_after_to = model.NewIntVar(0, BATTERY_MAS, f"v{v.id}_soc_to_{k}")
             soc_after_pre_wait = model.NewIntVar(0, BATTERY_MAS, f"v{v.id}_soc_pre_wait_{k}")
             soc_after_wait = model.NewIntVar(0, BATTERY_MAS, f"v{v.id}_soc_wait_{k}")
@@ -95,14 +96,14 @@ def plan(inp: PlannerInput) -> list[PlannedAction]:
             model.Add(ds >= prev_end)
             model.Add(de == ds + dur)
             if at_charger:
-                model.Add(soc_out == soc_after_from - dur * DRIVE_MA).OnlyEnforceIf(use.Not())
+                model.Add(soc_out == soc_after_from - dur * inp.energy_rates.drive_ma).OnlyEnforceIf(use.Not())
             else:
-                model.Add(soc_out == soc_in - dur * DRIVE_MA).OnlyEnforceIf(use.Not())
+                model.Add(soc_out == soc_in - dur * inp.energy_rates.drive_ma).OnlyEnforceIf(use.Not())
             if at_charger:
                 model.Add(from_s == prev_end).OnlyEnforceIf(use.Not())
                 model.Add(from_e == from_s + FROM_CHARGER_S).OnlyEnforceIf(use.Not())
                 model.Add(ds == from_e).OnlyEnforceIf(use.Not())
-                model.Add(soc_after_from == soc_in - FROM_CHARGER_S * DRIVE_MA).OnlyEnforceIf(use.Not())
+                model.Add(soc_after_from == soc_in - FROM_CHARGER_S * inp.energy_rates.drive_ma).OnlyEnforceIf(use.Not())
                 model.Add(soc_after_from >= 0).OnlyEnforceIf(use.Not())
                 model.Add(to_s == prev_end).OnlyEnforceIf(use.Not())
                 model.Add(to_e == prev_end).OnlyEnforceIf(use.Not())
@@ -132,30 +133,30 @@ def plan(inp: PlannerInput) -> list[PlannedAction]:
                 model.Add(soc_after_pre_wait == soc_in).OnlyEnforceIf(use)
                 model.Add(soc_after_to == soc_in).OnlyEnforceIf(use)
                 model.Add(cs == wait_e).OnlyEnforceIf(use)
-                model.Add(soc_after_wait == soc_after_to - wait_d * WAIT_MA).OnlyEnforceIf(use)
+                model.Add(soc_after_wait == soc_after_to - wait_d * inp.energy_rates.wait_ma).OnlyEnforceIf(use)
             else:
                 model.Add(wait_s == prev_end).OnlyEnforceIf(use)
                 model.Add(wait_e == wait_s + wait_d).OnlyEnforceIf(use)
                 model.Add(to_s == wait_e).OnlyEnforceIf(use)
                 model.Add(to_e == to_s + TO_CHARGER_S).OnlyEnforceIf(use)
                 model.Add(cs == to_e).OnlyEnforceIf(use)
-                model.Add(soc_after_pre_wait == soc_in - wait_d * WAIT_MA).OnlyEnforceIf(use)
+                model.Add(soc_after_pre_wait == soc_in - wait_d * inp.energy_rates.wait_ma).OnlyEnforceIf(use)
                 model.Add(soc_after_pre_wait >= PLANNER_MIN_SOC_MAS).OnlyEnforceIf(use)
-                model.Add(soc_after_to == soc_after_pre_wait - TO_CHARGER_S * DRIVE_MA).OnlyEnforceIf(use)
+                model.Add(soc_after_to == soc_after_pre_wait - TO_CHARGER_S * inp.energy_rates.drive_ma).OnlyEnforceIf(use)
                 model.Add(soc_after_to >= PLANNER_MIN_SOC_MAS).OnlyEnforceIf(use)
                 model.Add(soc_after_wait == soc_after_to).OnlyEnforceIf(use)
             model.Add(ce == cs + charge_d).OnlyEnforceIf(use)
             model.Add(charge_d >= 1).OnlyEnforceIf(use)
             model.Add(cs >= inp.charger_busy_until).OnlyEnforceIf(use)
             model.Add(soc_after_wait >= PLANNER_MIN_SOC_MAS).OnlyEnforceIf(use)
-            model.Add(soc_after_charge == soc_after_wait + charge_d * CHARGE_MA).OnlyEnforceIf(use)
+            model.Add(soc_after_charge == soc_after_wait + charge_d * inp.energy_rates.charge_ma).OnlyEnforceIf(use)
             model.Add(soc_after_charge <= BATTERY_MAS).OnlyEnforceIf(use)
             model.Add(from_s == ce).OnlyEnforceIf(use)
             model.Add(from_e == from_s + FROM_CHARGER_S).OnlyEnforceIf(use)
             model.Add(ds == from_e).OnlyEnforceIf(use)
-            model.Add(soc_after_from == soc_after_charge - FROM_CHARGER_S * DRIVE_MA).OnlyEnforceIf(use)
+            model.Add(soc_after_from == soc_after_charge - FROM_CHARGER_S * inp.energy_rates.drive_ma).OnlyEnforceIf(use)
             model.Add(soc_after_from >= PLANNER_MIN_SOC_MAS).OnlyEnforceIf(use)
-            model.Add(soc_out == soc_after_from - dur * DRIVE_MA).OnlyEnforceIf(use)
+            model.Add(soc_out == soc_after_from - dur * inp.energy_rates.drive_ma).OnlyEnforceIf(use)
             model.Add(soc_after_from >= PLANNER_MIN_SOC_MAS)
             model.Add(soc_out >= PLANNER_MIN_SOC_MAS)
             model.Add(de <= H)
@@ -277,6 +278,7 @@ def planner_inputs(
     outages: tuple[Outage, ...],
     soc_penalty_weight: int = 1000,
     total_time_weight: int = 1,
+    energy_rates: EnergyRates = DEFAULT_ENERGY_RATES,
 ) -> PlannerInput:
     inputs = []
     for v in vehicles:
@@ -294,4 +296,5 @@ def planner_inputs(
         now, tuple(inputs), charger_busy_until, outages,
         soc_penalty_weight=soc_penalty_weight,
         total_time_weight=total_time_weight,
+        energy_rates=energy_rates,
     )

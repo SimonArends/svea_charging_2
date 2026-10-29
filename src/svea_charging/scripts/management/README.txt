@@ -18,6 +18,12 @@ actions when available, a results summary, and the complete action timeline.
 Override the topic with the experiment_info_topic parameter. View it with:
 ros2 topic echo /experiment/info
 
+The exp_runner energy model is configurable at startup with the drive_ma,
+charge_ma and wait_ma integer parameters (all in mA). Defaults are 3700,
+3500 and 1900 respectively. For example:
+ros2 run svea_charging exp_runner.py --ros-args -p drive_ma:=4100 -p charge_ma:=3200 -p wait_ma:=1700
+These values are shared by the runner, controllers, planner and simulator.
+
 Runner commands are republished at the experiment update rate. Transport
 length is retried briefly when a delivery starts. After each delivery, the
 runner waits 2 seconds by default before starting another delivery; adjust
